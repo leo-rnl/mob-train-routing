@@ -1,13 +1,16 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+  import LoginForm from '@/components/LoginForm.vue'
+</script>
 
 <template>
-  <v-container>
-    <v-row justify="center">
-      <v-col cols="12" sm="8" md="4">
-        <v-card class="pa-4">
-          <v-card-title>Login</v-card-title>
+  <v-container class="fill-height">
+    <v-row justify="center" align="center">
+      <v-col cols="12" sm="8" md="5" lg="4">
+        <v-card class="pa-6" elevation="2">
+          <v-card-title class="text-h5 text-center mb-4"> Connexion </v-card-title>
+
           <v-card-text>
-            <p>Login form will be implemented in Phase 5.</p>
+            <LoginForm />
           </v-card-text>
         </v-card>
       </v-col>

@@ -1,5 +1,6 @@
-# Claude Code - session context (local only)
+# Claude Code - local only files
 .claude/current_context.md
+.claude/future_features.md
 
 # IDE
 .idea/
