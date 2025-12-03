@@ -1,28 +1,19 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\RouteController;
+use App\Http\Controllers\Api\V1\StationController;
+use App\Http\Controllers\Api\V1\StatsController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group.
-|
-*/
-
 Route::prefix('v1')->group(function () {
-    // Auth routes will be added in Phase 3
-    // Route::post('/auth/token', ...);
+    // Public routes
+    Route::post('/auth/token', [AuthController::class, 'createToken']);
 
-    // Station routes will be added in Phase 3
-    // Route::get('/stations', ...);
-
-    // Route calculation will be added in Phase 3
-    // Route::post('/routes', ...);
-
-    // Stats will be added in Phase 3
-    // Route::get('/stats/distances', ...);
+    // Protected routes
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/stations', [StationController::class, 'index']);
+        Route::post('/routes', [RouteController::class, 'store']);
+        Route::get('/stats/distances', [StatsController::class, 'distances']);
+    });
 });
