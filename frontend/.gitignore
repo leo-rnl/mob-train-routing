@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
