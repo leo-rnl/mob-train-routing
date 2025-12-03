@@ -4,3 +4,5 @@ parameters:
         - app
     excludePaths:
         - vendor
+    ignoreErrors:
+        - '#generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory#'
