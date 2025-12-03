@@ -1,0 +1,12 @@
+# Claude Code - session context (local only)
+.claude/current_context.md
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
