@@ -4,6 +4,9 @@ node_modules/
 # Build
 dist/
 .vite/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
 # Coverage
 coverage/
