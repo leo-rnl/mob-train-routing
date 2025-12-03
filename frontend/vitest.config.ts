@@ -7,10 +7,25 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
+    server: {
+      deps: {
+        inline: ['vuetify'],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'tests/', '**/*.d.ts', 'src/main.ts'],
+      include: ['src/**/*.ts', 'src/**/*.vue'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '**/*.d.ts',
+        'src/main.ts',
+        'src/App.vue',
+        'src/views/**',
+        'src/components/**',
+        'src/types/**',
+      ],
     },
   },
   resolve: {
