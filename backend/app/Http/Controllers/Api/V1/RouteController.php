@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\StoreRouteRequest;
+use App\Http\Resources\RouteResource;
+use App\Models\Route;
+use App\Services\GraphService;
+use Illuminate\Http\JsonResponse;
+
+class RouteController extends Controller
+{
+    public function __construct(
+        private readonly GraphService $graphService
+    ) {
+    }
+
+    public function store(StoreRouteRequest $request): RouteResource|JsonResponse
+    {
+        /** @var string $from */
+        $from = $request->validated('fromStationId');
+        /** @var string $to */
+        $to = $request->validated('toStationId');
+        /** @var string $analyticCode */
+        $analyticCode = $request->validated('analyticCode');
+
+        $this->graphService->loadGraph();
+        $result = $this->graphService->findShortestPath($from, $to);
+
+        if ($result === null) {
+            return response()->json([
+                'message' => 'No path exists between the specified stations.',
+                'errors' => [
+                    'route' => ['No path exists between the specified stations.'],
+                ],
+            ], 422);
+        }
+
+        $route = new Route();
+        $route->from_station_id = $from;
+        $route->to_station_id = $to;
+        $route->analytic_code = $analyticCode;
+        $route->distance_km = $result['distance'];
+        $route->path = $result['path'];
+        $route->save();
+
+        return (new RouteResource($route))
+            ->response()
+            ->setStatusCode(201);
+    }
+}
