@@ -325,6 +325,35 @@ train-routing/
 
 ---
 
+### Phase 5.5 : Enhancements
+**Branche** : `phase/5.5-enhancements`
+
+#### Backend
+- GET /api/v1/routes : historique des trajets de l'utilisateur connecté
+    - Paginé (per_page configurable)
+    - Inclut les objets `fromStation` et `toStation` avec shortName/longName
+    - Tri par createdAt desc
+- Tests feature pour le nouvel endpoint
+
+#### Frontend
+- Store Pinia `stations`
+    - Chargement des stations au boot de l'app
+    - Persistance localStorage (évite refetch)
+    - Getter pour résoudre shortName → longName
+- Composant `PathTimeline`
+    - Affichage visuel du trajet (timeline verticale)
+    - Mode collapsed (départ/arrivée) et expanded (toutes les stations)
+- Vue `HistoryView` + composant `HistoryCard`
+    - Liste paginée des trajets passés
+    - Intégration PathTimeline dans chaque card
+    - Action "Recalculer" → pré-remplit le formulaire
+- Persistance du dernier code analytique utilisé (localStorage)
+- Tests composants
+
+**Validation** : Historique fonctionnel, tests passent, coverage maintenu ≥ 80%
+
+---
+
 ### Phase 6 : DevOps & CI/CD
 **Branche** : `phase/6-devops`
 
