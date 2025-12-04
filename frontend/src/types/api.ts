@@ -50,6 +50,25 @@ export interface Route {
   createdAt: string
 }
 
+// === Pagination ===
+
+export interface PaginationMeta {
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+}
+
+export interface RoutesListParams {
+  page?: number
+  per_page?: number
+}
+
+export interface RoutesListResponse {
+  data: Route[]
+  meta: PaginationMeta
+}
+
 // === Stats ===
 
 export type GroupBy = 'none' | 'day' | 'month' | 'year'

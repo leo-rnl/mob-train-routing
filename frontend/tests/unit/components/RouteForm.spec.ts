@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import RouteForm from '@/components/RouteForm.vue'
 import { stationsApi, routesApi } from '@/services/api'
+import { useStationsStore } from '@/stores/stations'
 import type { AxiosResponse } from 'axios'
 
 // Mock the API
@@ -21,6 +22,13 @@ describe('RouteForm', () => {
     localStorage.clear()
     vi.clearAllMocks()
     vi.useFakeTimers()
+
+    // Setup stations store
+    const store = useStationsStore()
+    store.stations.set('MX', { id: 1, shortName: 'MX', longName: 'Montreux' })
+    store.stations.set('ZW', { id: 2, shortName: 'ZW', longName: 'Zweisimmen' })
+    store.stations.set('CGE', { id: 3, shortName: 'CGE', longName: 'Chamby-Gare' })
+    store.isLoaded = true
   })
 
   afterEach(() => {

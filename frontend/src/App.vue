@@ -1,9 +1,27 @@
 <script setup lang="ts">
   import { RouterView, useRouter } from 'vue-router'
+  import { onMounted, watch } from 'vue'
   import { useAuthStore } from '@/stores/auth'
+  import { useStationsStore } from '@/stores/stations'
 
   const router = useRouter()
   const authStore = useAuthStore()
+  const stationsStore = useStationsStore()
+
+  async function initStations() {
+    if (authStore.isAuthenticated && !stationsStore.isLoaded) {
+      await stationsStore.init()
+    }
+  }
+
+  onMounted(initStations)
+
+  watch(
+    () => authStore.isAuthenticated,
+    (isAuth) => {
+      if (isAuth) initStations()
+    }
+  )
 
   function handleLogout() {
     authStore.logout()

@@ -8,12 +8,26 @@ use App\Http\Resources\RouteResource;
 use App\Models\Route;
 use App\Services\GraphService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class RouteController extends Controller
 {
     public function __construct(
         private readonly GraphService $graphService
     ) {
+    }
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $perPage = min((int) $request->query('per_page', '10'), 100);
+
+        $routes = Route::query()
+            ->where('user_id', $request->user()?->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+
+        return RouteResource::collection($routes);
     }
 
     public function store(StoreRouteRequest $request): RouteResource|JsonResponse
@@ -38,6 +52,7 @@ class RouteController extends Controller
         }
 
         $route = new Route();
+        $route->user_id = $request->user()?->id;
         $route->from_station_id = $from;
         $route->to_station_id = $to;
         $route->analytic_code = $analyticCode;
