@@ -13,6 +13,7 @@ Route::prefix('v1')->group(function () {
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stations', [StationController::class, 'index']);
+        Route::get('/routes', [RouteController::class, 'index']);
         Route::post('/routes', [RouteController::class, 'store']);
         Route::get('/stats/distances', [StatsController::class, 'distances']);
     });

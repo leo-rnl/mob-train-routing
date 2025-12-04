@@ -6,6 +6,8 @@ import type {
   StationsResponse,
   CreateRouteRequest,
   Route,
+  RoutesListParams,
+  RoutesListResponse,
   StatsParams,
   StatsResponse,
 } from '@/types/api'
@@ -66,6 +68,7 @@ export const stationsApi = {
 
 export const routesApi = {
   create: (data: CreateRouteRequest) => api.post<Route>('/routes', data),
+  list: (params?: RoutesListParams) => api.get<RoutesListResponse>('/routes', { params }),
 }
 
 export const statsApi = {

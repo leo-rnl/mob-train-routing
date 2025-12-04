@@ -11,8 +11,10 @@ vi.mock('@/services/api', () => ({
   },
 }))
 
-// Simple test components
+// Simple test components (eslint-disable for test mocks)
+// eslint-disable-next-line vue/one-component-per-file
 const HomeView = defineComponent({ template: '<div>Home</div>' })
+// eslint-disable-next-line vue/one-component-per-file
 const LoginView = defineComponent({ template: '<div>Login</div>' })
 
 // Helper to create a fresh router with guards
