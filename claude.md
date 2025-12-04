@@ -343,14 +343,22 @@ train-routing/
 - Composant `PathTimeline`
     - Affichage visuel du trajet (timeline verticale)
     - Mode collapsed (départ/arrivée) et expanded (toutes les stations)
-- Vue `HistoryView` + composant `HistoryCard`
-    - Liste paginée des trajets passés
+- Composant `RouteCard` avec expand/collapse
+    - Affichage des détails du trajet (stations, distance, code analytique)
     - Intégration PathTimeline dans chaque card
-    - Action "Recalculer" → pré-remplit le formulaire
-- Persistance du dernier code analytique utilisé (localStorage)
+    - Mode highlight pour le dernier trajet calculé (bordure + fond subtil)
+    - Bouton "Utiliser" → pré-remplit le formulaire
+- Intégration historique dans `HomeView`
+    - Liste paginée des trajets sous le formulaire
+    - Dernier trajet calculé mis en avant (highlight)
+    - Pagination "Charger plus"
+- Améliorations `RouteForm`
+    - Pré-remplissage via props (from, to, code)
+    - Autocomplete avec 5 stations par défaut (pas de "no data")
+    - Persistance du dernier code analytique (localStorage)
 - Tests composants
 
-**Validation** : Historique fonctionnel, tests passent, coverage maintenu ≥ 80%
+**Validation** : Historique intégré fonctionnel, tests passent, coverage maintenu ≥ 80%
 
 ---
 
