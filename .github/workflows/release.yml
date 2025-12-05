@@ -1,0 +1,156 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository }}-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}-frontend
+
+jobs:
+  # ===========================================================================
+  # Build and Push Docker Images
+  # ===========================================================================
+  build-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Extract metadata for frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha,scope=backend-release
+          cache-to: type=gha,mode=max,scope=backend-release
+          platforms: linux/amd64
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha,scope=frontend-release
+          cache-to: type=gha,mode=max,scope=frontend-release
+          platforms: linux/amd64
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL || 'http://localhost:8000/api/v1' }}
+
+  # ===========================================================================
+  # Create GitHub Release with Changelog
+  # ===========================================================================
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build-push
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous tag
+        id: prev-tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## What's Changed" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          # Get commits since last tag
+          if [ -n "${{ steps.prev-tag.outputs.tag }}" ]; then
+            RANGE="${{ steps.prev-tag.outputs.tag }}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          # Group commits by type
+          echo "### Features" >> CHANGELOG.md
+          git log $RANGE --oneline --grep="^feat" --pretty=format:"- %s" >> CHANGELOG.md || true
+          echo "" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          echo "### Bug Fixes" >> CHANGELOG.md
+          git log $RANGE --oneline --grep="^fix" --pretty=format:"- %s" >> CHANGELOG.md || true
+          echo "" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          echo "### Other Changes" >> CHANGELOG.md
+          git log $RANGE --oneline --grep="^chore\|^docs\|^test\|^refactor\|^ci" --pretty=format:"- %s" >> CHANGELOG.md || true
+          echo "" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          echo "### Docker Images" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "\`\`\`bash" >> CHANGELOG.md
+          echo "# Pull images" >> CHANGELOG.md
+          echo "docker pull ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }}" >> CHANGELOG.md
+          echo "docker pull ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }}" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "# Or use docker-compose.prod.yml" >> CHANGELOG.md
+          echo "TAG=${{ github.ref_name }} docker compose -f docker-compose.prod.yml up -d" >> CHANGELOG.md
+          echo "\`\`\`" >> CHANGELOG.md
+
+          cat CHANGELOG.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

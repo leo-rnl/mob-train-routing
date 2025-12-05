@@ -6,7 +6,17 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  COVERAGE_THRESHOLD: 80
+
 jobs:
+  # ===========================================================================
+  # Lint Jobs
+  # ===========================================================================
   lint-backend:
     name: Backend Lint
     runs-on: ubuntu-latest
@@ -70,13 +80,324 @@ jobs:
       - name: Run TypeScript check
         run: npm run type-check
 
-  docker-build:
-    name: Docker Build
+  # ===========================================================================
+  # Test Jobs
+  # ===========================================================================
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: lint-backend
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: mob_train_test
+          POSTGRES_USER: mob
+          POSTGRES_PASSWORD: mob_secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U mob -d mob_train_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_pgsql, pgsql, zip
+          coverage: xdebug
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Setup environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Configure test database
+        run: |
+          echo "DB_CONNECTION=pgsql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_DATABASE=mob_train_test" >> .env
+          echo "DB_USERNAME=mob" >> .env
+          echo "DB_PASSWORD=mob_secret" >> .env
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Run tests with coverage
+        run: php artisan test --coverage-clover=coverage.xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          retention-days: 1
+
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: lint-frontend
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test -- --run --coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 1
+
+  # ===========================================================================
+  # Coverage Check
+  # ===========================================================================
+  coverage-check:
+    name: Coverage Check
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage/backend
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: coverage/frontend
+
+      - name: Check backend coverage
+        run: |
+          if [ -f coverage/backend/coverage.xml ]; then
+            # Parse Clover format: statements and coveredstatements from project metrics
+            STATEMENTS=$(grep -oE 'statements="[0-9]+"' coverage/backend/coverage.xml | tail -1 | grep -oE '[0-9]+')
+            COVERED=$(grep -oE 'coveredstatements="[0-9]+"' coverage/backend/coverage.xml | tail -1 | grep -oE '[0-9]+')
+            if [ -z "$STATEMENTS" ] || [ -z "$COVERED" ]; then
+              echo "::error::Could not parse coverage from coverage.xml"
+              cat coverage/backend/coverage.xml | tail -20
+              exit 1
+            fi
+            COVERAGE_PCT=$(echo "scale=2; $COVERED * 100 / $STATEMENTS" | bc)
+            echo "Backend coverage: ${COVERAGE_PCT}% ($COVERED/$STATEMENTS statements)"
+            if [ "$(echo "$COVERAGE_PCT < ${{ env.COVERAGE_THRESHOLD }}" | bc -l)" -eq 1 ]; then
+              echo "::error::Backend coverage ${COVERAGE_PCT}% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+              exit 1
+            fi
+            echo "::notice::Backend coverage ${COVERAGE_PCT}% meets threshold"
+          else
+            echo "::error::Backend coverage file not found"
+            exit 1
+          fi
+
+      - name: Check frontend coverage
+        run: |
+          if [ -f coverage/frontend/coverage-summary.json ]; then
+            COVERAGE=$(jq '.total.lines.pct' coverage/frontend/coverage-summary.json)
+            echo "Frontend coverage: ${COVERAGE}%"
+            if [ "$(echo "$COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l)" -eq 1 ]; then
+              echo "::error::Frontend coverage ${COVERAGE}% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+              exit 1
+            fi
+            echo "::notice::Frontend coverage ${COVERAGE}% meets threshold"
+          else
+            echo "::error::Frontend coverage file not found"
+            exit 1
+          fi
+
+  # ===========================================================================
+  # Security Jobs
+  # ===========================================================================
+  security-audit:
+    name: Security Audit
     runs-on: ubuntu-latest
     needs: [lint-backend, lint-frontend]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker images
-        run: docker compose build
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Audit backend dependencies
+        working-directory: backend
+        run: composer audit --locked
+        continue-on-error: true
+
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  # ===========================================================================
+  # Docker Build & Security Scan
+  # ===========================================================================
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: mob-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          tags: mob-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Run Trivy vulnerability scanner on backend
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: mob-backend:ci
+          format: 'sarif'
+          output: 'trivy-backend.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Run Trivy vulnerability scanner on frontend
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: mob-frontend:ci
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy scan results (backend)
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-backend.sarif'
+          category: 'trivy-backend'
+        continue-on-error: true
+
+      - name: Upload Trivy scan results (frontend)
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-frontend.sarif'
+          category: 'trivy-frontend'
+        continue-on-error: true
+
+  # ===========================================================================
+  # DAST Scan (Dynamic Application Security Testing)
+  # ===========================================================================
+  dast-scan:
+    name: DAST Scan (ZAP)
+    runs-on: ubuntu-latest
+    needs: docker-build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env file
+        # Note: valeurs en dur acceptables car environnement CI éphémère et isolé
+        run: |
+          echo "POSTGRES_PASSWORD=ci_secret" > .env
+          echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
+          echo "AUTO_MIGRATE=true" >> .env
+
+      - name: Start application stack
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --build
+          echo "Waiting for services to be healthy..."
+          sleep 60
+          docker compose -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.prod.yml logs backend --tail=50
+
+      - name: Check backend health
+        run: |
+          for i in 1 2 3 4 5; do
+            if curl -sf http://localhost:8000/health; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            echo "Attempt $i failed, waiting..."
+            sleep 10
+          done
+          echo "Backend health check failed after 5 attempts"
+          docker compose -f docker-compose.prod.yml logs backend
+          exit 1
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: 'http://localhost:8000'
+          rules_file_name: '.zap/rules.tsv'
+          fail_action: false
+          allow_issue_writing: false
+        continue-on-error: true
+
+      - name: Stop application
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v
