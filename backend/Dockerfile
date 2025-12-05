@@ -61,9 +61,8 @@ COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 # Copy supervisor configuration
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Copy application from composer stage
-COPY --from=composer /app/vendor ./vendor
-COPY . .
+# Copy application from composer stage (includes cleaned bootstrap/cache)
+COPY --from=composer /app ./
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \

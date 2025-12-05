@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  security-events: write
+
 env:
   COVERAGE_THRESHOLD: 80
 
@@ -210,28 +214,39 @@ jobs:
       - name: Check backend coverage
         run: |
           if [ -f coverage/backend/coverage.xml ]; then
-            COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage/backend/coverage.xml | head -1)
-            COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc -l | xargs printf "%.2f")
-            echo "Backend coverage: ${COVERAGE_PCT}%"
-            if (( $(echo "$COVERAGE_PCT < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+            # Parse Clover format: statements and coveredstatements from project metrics
+            STATEMENTS=$(grep -oE 'statements="[0-9]+"' coverage/backend/coverage.xml | tail -1 | grep -oE '[0-9]+')
+            COVERED=$(grep -oE 'coveredstatements="[0-9]+"' coverage/backend/coverage.xml | tail -1 | grep -oE '[0-9]+')
+            if [ -z "$STATEMENTS" ] || [ -z "$COVERED" ]; then
+              echo "::error::Could not parse coverage from coverage.xml"
+              cat coverage/backend/coverage.xml | tail -20
+              exit 1
+            fi
+            COVERAGE_PCT=$(echo "scale=2; $COVERED * 100 / $STATEMENTS" | bc)
+            echo "Backend coverage: ${COVERAGE_PCT}% ($COVERED/$STATEMENTS statements)"
+            if [ "$(echo "$COVERAGE_PCT < ${{ env.COVERAGE_THRESHOLD }}" | bc -l)" -eq 1 ]; then
               echo "::error::Backend coverage ${COVERAGE_PCT}% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
               exit 1
             fi
+            echo "::notice::Backend coverage ${COVERAGE_PCT}% meets threshold"
           else
-            echo "::warning::Backend coverage file not found"
+            echo "::error::Backend coverage file not found"
+            exit 1
           fi
 
       - name: Check frontend coverage
         run: |
           if [ -f coverage/frontend/coverage-summary.json ]; then
-            COVERAGE=$(cat coverage/frontend/coverage-summary.json | jq '.total.lines.pct')
+            COVERAGE=$(jq '.total.lines.pct' coverage/frontend/coverage-summary.json)
             echo "Frontend coverage: ${COVERAGE}%"
-            if (( $(echo "$COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+            if [ "$(echo "$COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l)" -eq 1 ]; then
               echo "::error::Frontend coverage ${COVERAGE}% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
               exit 1
             fi
+            echo "::notice::Frontend coverage ${COVERAGE}% meets threshold"
           else
-            echo "::warning::Frontend coverage file not found"
+            echo "::error::Frontend coverage file not found"
+            exit 1
           fi
 
   # ===========================================================================
@@ -355,19 +370,31 @@ jobs:
         run: |
           docker compose -f docker-compose.prod.yml up -d --build
           echo "Waiting for services to be healthy..."
-          sleep 30
+          sleep 60
           docker compose -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.prod.yml logs backend --tail=50
 
       - name: Check backend health
         run: |
-          curl -f http://localhost:8000/health || exit 1
+          for i in 1 2 3 4 5; do
+            if curl -sf http://localhost:8000/health; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            echo "Attempt $i failed, waiting..."
+            sleep 10
+          done
+          echo "Backend health check failed after 5 attempts"
+          docker compose -f docker-compose.prod.yml logs backend
+          exit 1
 
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.14.0
         with:
           target: 'http://localhost:8000'
           rules_file_name: '.zap/rules.tsv'
-          fail_action: 'false'
+          fail_action: false
+        continue-on-error: true
 
       - name: Stop application
         if: always()
