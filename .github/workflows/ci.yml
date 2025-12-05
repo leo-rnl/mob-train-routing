@@ -365,6 +365,7 @@ jobs:
         run: |
           echo "POSTGRES_PASSWORD=ci_secret" > .env
           echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
+          echo "AUTO_MIGRATE=true" >> .env
 
       - name: Start application stack
         run: |
