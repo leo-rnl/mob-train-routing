@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Testing
+tests
+phpunit.xml
+.phpunit.result.cache
+
+# Development files
+.env
+.env.local
+.env.*.local
+.env.testing
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Node (if any)
+node_modules
+
+# Storage (will be mounted or managed by entrypoint)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Keep .gitkeep files
+!storage/logs/.gitkeep
+!storage/framework/cache/.gitkeep
+!storage/framework/sessions/.gitkeep
+!storage/framework/views/.gitkeep
+
+# Vendor (will be installed in build stage)
+vendor
+
+# Bootstrap cache (will be regenerated, may contain dev packages)
+bootstrap/cache/*.php
+
+# Development dependencies
+phpstan.neon
+phpcs.xml
+.php-cs-fixer.cache

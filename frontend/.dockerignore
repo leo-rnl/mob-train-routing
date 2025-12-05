@@ -1,0 +1,55 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Dependencies (will be installed in build stage)
+node_modules
+
+# Build output (will be generated in build stage)
+dist
+
+# Testing
+coverage
+*.test.ts
+*.spec.ts
+__tests__
+vitest.config.ts
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor directories
+.idea
+.vscode
+
+# OS files
+.DS_Store
+Thumbs.db
