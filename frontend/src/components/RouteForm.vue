@@ -151,7 +151,7 @@
               :loading="stationsStore.isLoading"
               item-title="longName"
               item-value="shortName"
-              label="Station de départ"
+              label="Gare de départ"
               prepend-inner-icon="mdi-train"
               variant="outlined"
               no-filter
@@ -169,7 +169,7 @@
               :loading="stationsStore.isLoading"
               item-title="longName"
               item-value="shortName"
-              label="Station d'arrivée"
+              label="Gare de destination"
               prepend-inner-icon="mdi-flag-checkered"
               variant="outlined"
               no-filter

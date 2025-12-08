@@ -37,18 +37,39 @@
     </v-overlay>
 
     <template v-else>
-      <v-app-bar v-if="authStore.isAuthenticated" color="primary" density="compact">
-        <v-toolbar-title class="ml-2">MOB Train Routing</v-toolbar-title>
+      <v-app-bar v-if="authStore.isAuthenticated" color="primary" density="comfortable">
+        <v-toolbar-title class="ml-4 font-weight-bold">MOB Train Routing</v-toolbar-title>
 
         <v-spacer />
 
-        <v-btn to="/" variant="text">Accueil</v-btn>
-        <v-btn to="/stats" variant="text">Statistiques</v-btn>
+        <nav class="d-flex align-center">
+          <v-btn
+            to="/"
+            variant="text"
+            class="nav-link mx-1"
+            :class="{ 'nav-link--active': $route.name === 'home' }"
+          >
+            Accueil
+          </v-btn>
+          <v-btn
+            to="/stats"
+            variant="text"
+            class="nav-link mx-1"
+            :class="{ 'nav-link--active': $route.name === 'stats' }"
+          >
+            Statistiques
+          </v-btn>
+        </nav>
 
         <v-spacer />
 
-        <span class="mr-4 text-body-2">{{ authStore.user?.name }}</span>
-        <v-btn variant="outlined" size="small" @click="handleLogout">Déconnexion</v-btn>
+        <div class="d-flex align-center mr-4">
+          <v-icon size="small" class="mr-2">mdi-account</v-icon>
+          <span class="text-body-2 font-weight-medium">{{ authStore.user?.name }}</span>
+        </div>
+        <v-btn variant="outlined" size="small" class="mr-4 logout-btn" @click="handleLogout">
+          Déconnexion
+        </v-btn>
       </v-app-bar>
 
       <v-main>
@@ -57,3 +78,52 @@
     </template>
   </v-app>
 </template>
+
+<style>
+  /* Global font family */
+  html,
+  body,
+  .v-application {
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  /* Typography adjustments */
+  .v-application {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Disable uppercase on all buttons */
+  .v-btn {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+</style>
+
+<style scoped>
+  /* Navigation links */
+  .nav-link {
+    font-weight: 500;
+    opacity: 0.85;
+  }
+
+  .nav-link:hover {
+    opacity: 1;
+  }
+
+  .nav-link--active {
+    opacity: 1;
+    border-bottom: 2px solid rgb(var(--v-theme-secondary));
+  }
+
+  /* Logout button */
+  .logout-btn {
+    font-weight: 500;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .logout-btn:hover {
+    border-color: rgba(255, 255, 255, 1);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+</style>
