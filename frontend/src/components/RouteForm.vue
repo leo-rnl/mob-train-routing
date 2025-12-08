@@ -89,6 +89,18 @@
     }
   })
 
+  // Swap departure and destination stations
+  function swapStations() {
+    const tempStation = fromStation.value
+    const tempSearch = fromSearch.value
+
+    fromStation.value = toStation.value
+    fromSearch.value = toSearch.value
+
+    toStation.value = tempStation
+    toSearch.value = tempSearch
+  }
+
   // Submit handler
   async function handleSubmit() {
     if (!isFormValid.value || !fromStation.value || !toStation.value) return
@@ -126,84 +138,153 @@
 </script>
 
 <template>
-  <v-card>
-    <v-card-title>Calculer un trajet</v-card-title>
+  <div class="route-form">
+    <v-alert
+      v-if="error"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      closable
+      @click:close="error = null"
+    >
+      {{ error }}
+    </v-alert>
 
-    <v-card-text>
-      <v-alert
-        v-if="error"
-        type="error"
-        variant="tonal"
-        class="mb-4"
-        closable
-        @click:close="error = null"
+    <v-form @submit.prevent="handleSubmit">
+      <!-- Station inputs with timeline -->
+      <div class="stations-group">
+        <!-- Timeline connector -->
+        <div class="stations-timeline">
+          <div class="timeline-dot" />
+          <div class="timeline-line" />
+          <div class="timeline-dot timeline-dot--filled" />
+        </div>
+
+        <!-- Station inputs -->
+        <div class="stations-inputs">
+          <v-autocomplete
+            v-model="fromStation"
+            v-model:search="fromSearch"
+            :items="fromStations"
+            :loading="stationsStore.isLoading"
+            item-title="longName"
+            item-value="shortName"
+            label="Gare de départ"
+            variant="outlined"
+            no-filter
+            clearable
+            density="comfortable"
+            hide-details
+            class="mb-3"
+          />
+
+          <v-autocomplete
+            v-model="toStation"
+            v-model:search="toSearch"
+            :items="toStations"
+            :loading="stationsStore.isLoading"
+            item-title="longName"
+            item-value="shortName"
+            label="Gare de destination"
+            variant="outlined"
+            no-filter
+            clearable
+            density="comfortable"
+            hide-details
+          />
+        </div>
+
+        <!-- Swap button -->
+        <v-btn
+          variant="flat"
+          class="swap-btn"
+          :disabled="!fromStation && !toStation"
+          @click="swapStations"
+        >
+          <v-icon>mdi-swap-vertical</v-icon>
+        </v-btn>
+      </div>
+
+      <!-- Separator -->
+      <v-divider class="my-6" />
+
+      <!-- Analytic code -->
+      <v-text-field
+        v-model="analyticCode"
+        label="Code analytique"
+        prepend-inner-icon="mdi-tag"
+        variant="outlined"
+        density="comfortable"
+        class="mb-0"
+      />
+
+      <!-- Submit button -->
+      <v-btn
+        type="submit"
+        color="primary"
+        block
+        size="large"
+        :loading="isSubmitting"
+        :disabled="!isFormValid || isSubmitting"
       >
-        {{ error }}
-      </v-alert>
-
-      <v-form @submit.prevent="handleSubmit">
-        <v-row align="center">
-          <v-col cols="12" md="3">
-            <v-autocomplete
-              v-model="fromStation"
-              v-model:search="fromSearch"
-              :items="fromStations"
-              :loading="stationsStore.isLoading"
-              item-title="longName"
-              item-value="shortName"
-              label="Gare de départ"
-              prepend-inner-icon="mdi-train"
-              variant="outlined"
-              no-filter
-              clearable
-              hide-details
-              density="comfortable"
-            />
-          </v-col>
-
-          <v-col cols="12" md="3">
-            <v-autocomplete
-              v-model="toStation"
-              v-model:search="toSearch"
-              :items="toStations"
-              :loading="stationsStore.isLoading"
-              item-title="longName"
-              item-value="shortName"
-              label="Gare de destination"
-              prepend-inner-icon="mdi-flag-checkered"
-              variant="outlined"
-              no-filter
-              clearable
-              hide-details
-              density="comfortable"
-            />
-          </v-col>
-
-          <v-col cols="12" md="3">
-            <v-text-field
-              v-model="analyticCode"
-              label="Code analytique"
-              prepend-inner-icon="mdi-tag"
-              variant="outlined"
-              hide-details
-              density="comfortable"
-            />
-          </v-col>
-
-          <v-col cols="12" md="3">
-            <v-btn
-              type="submit"
-              color="primary"
-              block
-              size="large"
-              :loading="isSubmitting"
-              :disabled="!isFormValid || isSubmitting"
-            >
-              Calculer
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-form>
-    </v-card-text>
-  </v-card>
+        Calculer le trajet
+      </v-btn>
+    </v-form>
+  </div>
 </template>
+
+<style scoped>
+  .stations-group {
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  /* Timeline on the left */
+  .stations-timeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0;
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgb(var(--v-theme-on-surface));
+    background-color: transparent;
+    flex-shrink: 0;
+  }
+
+  .timeline-dot--filled {
+    background-color: rgb(var(--v-theme-on-surface));
+  }
+
+  .timeline-line {
+    flex: 1;
+    width: 2px;
+    background-color: rgb(var(--v-theme-on-surface));
+    margin: 4px 0;
+  }
+
+  /* Station inputs */
+  .stations-inputs {
+    flex: 1;
+  }
+
+  /* Swap button */
+  .swap-btn {
+    align-self: stretch;
+    min-width: 48px !important;
+    height: auto !important;
+    background-color: #f0f0f0 !important;
+    color: rgb(var(--v-theme-on-surface)) !important;
+  }
+
+  .swap-btn:hover {
+    background-color: #e0e0e0 !important;
+  }
+</style>

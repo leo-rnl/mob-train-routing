@@ -62,7 +62,7 @@ describe('RouteForm', () => {
   it('renders the form with all fields', () => {
     const wrapper = mountComponent()
 
-    expect(wrapper.text()).toContain('Calculer un trajet')
+    expect(wrapper.text()).toContain('Calculer le trajet')
     expect(wrapper.find('button[type="submit"]').exists()).toBe(true)
   })
 

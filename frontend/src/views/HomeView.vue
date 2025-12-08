@@ -90,17 +90,20 @@
 </script>
 
 <template>
-  <v-container>
-    <!-- Form section - wider -->
-    <v-row justify="center">
-      <v-col cols="12" lg="10">
-        <RouteForm :prefill="prefillData" class="mb-6" @route-calculated="handleRouteCalculated" />
-      </v-col>
-    </v-row>
+  <div class="home-layout">
+    <!-- Left panel: Form -->
+    <main class="home-layout__main">
+      <div class="home-layout__main-content">
+        <h1 class="text-h5 font-weight-bold mb-6">Calculer un trajet</h1>
+        <RouteForm :prefill="prefillData" @route-calculated="handleRouteCalculated" />
+      </div>
+    </main>
 
-    <!-- Routes list section - narrower -->
-    <v-row justify="center">
-      <v-col cols="12" md="10" lg="8">
+    <!-- Right aside: Route cards -->
+    <aside class="home-layout__aside">
+      <div class="home-layout__aside-content">
+        <h2 class="text-h6 font-weight-bold mb-4">Historique des trajets</h2>
+
         <v-alert v-if="error" type="error" variant="tonal" closable @click:close="error = null">
           {{ error }}
         </v-alert>
@@ -121,21 +124,81 @@
 
         <!-- Load more button -->
         <div v-if="hasMore && !isLoading" class="text-center mt-4">
-          <v-btn variant="outlined" color="primary" @click="loadMore"> Charger plus </v-btn>
+          <v-btn variant="outlined" color="primary" @click="loadMore">Charger plus</v-btn>
         </div>
 
-        <!-- Empty state (only if no routes and no lastCalculated) -->
+        <!-- Empty state -->
         <div
           v-if="routes.length === 0 && !lastCalculated && !isLoading"
-          class="text-center pa-8 mt-4"
+          class="empty-state text-center pa-8"
         >
           <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-train-variant</v-icon>
-          <div class="text-h6 text-medium-emphasis">Calculez votre premier trajet</div>
+          <div class="text-h6 text-medium-emphasis">Aucun trajet</div>
           <div class="text-body-2 text-medium-emphasis">
-            Sélectionnez les stations de départ et d'arrivée ci-dessus.
+            Calculez votre premier trajet pour le voir apparaître ici.
           </div>
         </div>
-      </v-col>
-    </v-row>
-  </v-container>
+      </div>
+    </aside>
+  </div>
 </template>
+
+<style scoped>
+  .home-layout {
+    display: flex;
+    min-height: calc(100vh - 64px); /* Subtract app bar height */
+  }
+
+  /* Left panel - Form */
+  .home-layout__main {
+    flex: 0 0 50%;
+    max-width: 600px;
+    min-width: 400px;
+    background-color: rgb(var(--v-theme-surface));
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .home-layout__main-content {
+    padding: 30px;
+    position: sticky;
+    top: 64px; /* App bar height */
+  }
+
+  /* Right aside - Route cards */
+  .home-layout__aside {
+    flex: 1;
+    background-color: #f5f5f5;
+    overflow-y: auto;
+  }
+
+  .home-layout__aside-content {
+    padding: 30px;
+    max-width: 800px;
+  }
+
+  .empty-state {
+    background-color: rgb(var(--v-theme-surface));
+    border: 1px dashed rgba(0, 0, 0, 0.12);
+  }
+
+  /* Responsive: stack on mobile */
+  @media (max-width: 960px) {
+    .home-layout {
+      flex-direction: column;
+    }
+
+    .home-layout__main {
+      flex: none;
+      max-width: 100%;
+      min-width: 100%;
+    }
+
+    .home-layout__main-content {
+      padding: 20px;
+    }
+
+    .home-layout__aside-content {
+      padding: 20px;
+    }
+  }
+</style>
