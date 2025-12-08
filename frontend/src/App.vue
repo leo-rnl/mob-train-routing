@@ -63,13 +63,27 @@
 
         <v-spacer />
 
-        <div class="d-flex align-center mr-4">
-          <v-icon size="small" class="mr-2">mdi-account</v-icon>
-          <span class="text-body-2 font-weight-medium">{{ authStore.user?.name }}</span>
-        </div>
-        <v-btn variant="outlined" size="small" class="mr-4 logout-btn" @click="handleLogout">
-          Déconnexion
-        </v-btn>
+        <v-menu offset-y>
+          <template #activator="{ props }">
+            <v-btn v-bind="props" variant="plain" class="user-menu-btn mr-2">
+              <v-icon size="small" class="mr-2">mdi-account-circle</v-icon>
+              <span class="text-body-2 font-weight-medium">{{ authStore.user?.name }}</span>
+              <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
+            </v-btn>
+          </template>
+          <v-list density="compact" min-width="160">
+            <v-list-item class="text-medium-emphasis">
+              <v-list-item-subtitle>{{ authStore.user?.email }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-divider />
+            <v-list-item @click="handleLogout">
+              <template #prepend>
+                <v-icon size="small">mdi-logout</v-icon>
+              </template>
+              <v-list-item-title>Déconnexion</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-app-bar>
 
       <v-main>
@@ -116,14 +130,8 @@
     border-bottom: 2px solid rgb(var(--v-theme-secondary));
   }
 
-  /* Logout button */
-  .logout-btn {
+  /* User menu button */
+  .user-menu-btn {
     font-weight: 500;
-    border-color: rgba(255, 255, 255, 0.5);
-  }
-
-  .logout-btn:hover {
-    border-color: rgba(255, 255, 255, 1);
-    background-color: rgba(255, 255, 255, 0.1);
   }
 </style>
