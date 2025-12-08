@@ -3,33 +3,44 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\CreateTokenRequest;
-use App\Http\Resources\TokenResource;
-use App\Models\User;
+use App\Http\Requests\Api\V1\LoginRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function createToken(CreateTokenRequest $request): TokenResource|JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        /** @var string $email */
-        $email = $request->validated('email');
-        /** @var string $password */
-        $password = $request->validated('password');
-        /** @var string $deviceName */
-        $deviceName = $request->validated('device_name');
-
-        $user = User::query()->where('email', $email)->first();
-
-        if ($user === null || !Hash::check($password, $user->password)) {
+        if (!Auth::attempt($request->validated())) {
             return response()->json([
                 'message' => 'Invalid credentials',
             ], 401);
         }
 
-        $token = $user->createToken($deviceName);
+        $request->session()->regenerate();
 
-        return new TokenResource($token);
+        return response()->json([
+            'user' => Auth::user(),
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json([
+            'message' => 'Logged out',
+        ]);
+    }
+
+    public function user(Request $request): JsonResponse
+    {
+        return response()->json([
+            'user' => $request->user(),
+        ]);
     }
 }

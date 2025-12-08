@@ -1,25 +1,25 @@
 import { defineStore } from 'pinia'
-import { authApi } from '@/services/api'
+import { authApi, csrfApi } from '@/services/api'
 import type { AxiosError } from 'axios'
-import type { ApiError } from '@/types/api'
-
-const AUTH_TOKEN_KEY = 'auth_token'
+import type { ApiError, User } from '@/types/api'
 
 interface AuthState {
-  token: string | null
+  user: User | null
   isLoading: boolean
   error: string | null
+  isInitialized: boolean
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
-    token: localStorage.getItem(AUTH_TOKEN_KEY),
+    user: null,
     isLoading: false,
     error: null,
+    isInitialized: false,
   }),
 
   getters: {
-    isAuthenticated: (state): boolean => !!state.token,
+    isAuthenticated: (state): boolean => state.user !== null,
   },
 
   actions: {
@@ -28,14 +28,13 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
 
       try {
-        const response = await authApi.login({
-          email,
-          password,
-          device_name: 'frontend',
-        })
+        // 1. Get CSRF cookie from Sanctum
+        await csrfApi.getCookie()
 
-        this.token = response.data.token
-        localStorage.setItem(AUTH_TOKEN_KEY, this.token)
+        // 2. Login with session
+        const response = await authApi.login({ email, password })
+
+        this.user = response.data.user
         return true
       } catch (e) {
         const error = e as AxiosError<ApiError>
@@ -46,18 +45,32 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    logout(): void {
-      this.token = null
-      this.error = null
-      localStorage.removeItem(AUTH_TOKEN_KEY)
+    async logout(): Promise<void> {
+      try {
+        await authApi.logout()
+      } catch {
+        // Ignore logout errors
+      } finally {
+        this.user = null
+        this.error = null
+      }
+    },
+
+    async checkAuth(): Promise<void> {
+      this.isLoading = true
+      try {
+        const response = await authApi.user()
+        this.user = response.data.user
+      } catch {
+        this.user = null
+      } finally {
+        this.isLoading = false
+        this.isInitialized = true
+      }
     },
 
     clearError(): void {
       this.error = null
-    },
-
-    init(): void {
-      this.token = localStorage.getItem(AUTH_TOKEN_KEY)
     },
   },
 })

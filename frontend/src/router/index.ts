@@ -44,8 +44,13 @@ const router = createRouter({
 // Navigation Guards
 // ============================================================================
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+
+  // Wait for auth to be initialized before making routing decisions
+  if (!authStore.isInitialized) {
+    await authStore.checkAuth()
+  }
 
   // Protected route: redirect to login if not authenticated
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {

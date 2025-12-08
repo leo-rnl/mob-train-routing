@@ -1,22 +1,28 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { authApi } from '@/services/api'
 
 // Mock API to prevent actual axios calls
 vi.mock('@/services/api', () => ({
   authApi: {
     login: vi.fn(),
+    logout: vi.fn(),
+    user: vi.fn(),
+  },
+  csrfApi: {
+    getCookie: vi.fn(),
   },
 }))
+
+const mockUser = { id: 1, name: 'Test User', email: 'test@example.com' }
 
 describe('Router Configuration', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    localStorage.clear()
     vi.resetModules()
-  })
-
-  afterEach(() => {
-    localStorage.clear()
+    vi.clearAllMocks()
+    // Default: unauthenticated (API returns error)
+    vi.mocked(authApi.user).mockRejectedValue(new Error('Unauthenticated'))
   })
 
   it('should export a router instance', async () => {
@@ -54,7 +60,11 @@ describe('Router Configuration', () => {
   })
 
   it('should allow authenticated user to access home', async () => {
-    localStorage.setItem('auth_token', 'test-token')
+    // Mock API to return authenticated user
+    vi.mocked(authApi.user).mockResolvedValue({
+      data: { user: mockUser },
+    } as never)
+
     const { default: router } = await import('@/router/index')
 
     await router.push('/')
@@ -64,7 +74,11 @@ describe('Router Configuration', () => {
   })
 
   it('should redirect authenticated user from login to home', async () => {
-    localStorage.setItem('auth_token', 'test-token')
+    // Mock API to return authenticated user
+    vi.mocked(authApi.user).mockResolvedValue({
+      data: { user: mockUser },
+    } as never)
+
     const { default: router } = await import('@/router/index')
 
     await router.push('/login')
