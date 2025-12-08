@@ -102,7 +102,10 @@
     <!-- Right aside: Route cards -->
     <aside class="home-layout__aside">
       <div class="home-layout__aside-content">
-        <h2 class="text-h6 font-weight-bold mb-4">Historique des trajets</h2>
+        <h2 class="text-h6 font-weight-bold mb-4">
+          Historique des trajets
+          <span v-if="meta?.total" class="routes-count">({{ meta.total }})</span>
+        </h2>
 
         <v-alert v-if="error" type="error" variant="tonal" closable @click:close="error = null">
           {{ error }}
@@ -179,6 +182,11 @@
   .empty-state {
     background-color: rgb(var(--v-theme-surface));
     border: 1px dashed rgba(0, 0, 0, 0.12);
+  }
+
+  .routes-count {
+    font-weight: 400;
+    color: #737885;
   }
 
   /* Responsive: stack on mobile */
