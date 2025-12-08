@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
+import * as labsComponents from 'vuetify/labs/components'
 import * as directives from 'vuetify/directives'
 import { fr } from 'vuetify/locale'
 import '@mdi/font/css/materialdesignicons.css'
@@ -32,7 +33,10 @@ const mobTheme = {
 }
 
 const vuetify = createVuetify({
-  components,
+  components: {
+    ...components,
+    ...labsComponents,
+  },
   directives,
   locale: {
     locale: 'fr',

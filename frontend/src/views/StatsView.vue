@@ -4,8 +4,8 @@
   import type { DistanceStat, GroupBy } from '@/types/api'
 
   // Filter state
-  const fromDate = ref('')
-  const toDate = ref('')
+  const fromDate = ref<Date | null>(null)
+  const toDate = ref<Date | null>(null)
   const groupBy = ref<GroupBy>('none')
 
   const groupByOptions = [
@@ -27,6 +27,14 @@
     { title: 'Période', key: 'group', sortable: true },
   ]
 
+  function formatDateForApi(date: Date | null): string | undefined {
+    if (!date) return undefined
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   async function fetchStats() {
     isLoading.value = true
     error.value = null
@@ -34,8 +42,11 @@
     try {
       const params: { from?: string; to?: string; groupBy?: GroupBy } = {}
 
-      if (fromDate.value) params.from = fromDate.value
-      if (toDate.value) params.to = toDate.value
+      const fromStr = formatDateForApi(fromDate.value)
+      const toStr = formatDateForApi(toDate.value)
+
+      if (fromStr) params.from = fromStr
+      if (toStr) params.to = toStr
       if (groupBy.value !== 'none') params.groupBy = groupBy.value
 
       const { data } = await statsApi.distances(params)
@@ -63,23 +74,25 @@
         <h1 class="text-h5 font-weight-bold mb-6">Filtrer les statistiques</h1>
 
         <div class="stats-filters">
-          <v-text-field
+          <v-date-input
             v-model="fromDate"
             label="Date de début"
-            type="date"
             variant="outlined"
             density="compact"
             hide-details
+            prepend-icon=""
+            prepend-inner-icon="mdi-calendar"
             class="mb-4"
           />
 
-          <v-text-field
+          <v-date-input
             v-model="toDate"
             label="Date de fin"
-            type="date"
             variant="outlined"
             density="compact"
             hide-details
+            prepend-icon=""
+            prepend-inner-icon="mdi-calendar"
             class="mb-4"
           />
 
