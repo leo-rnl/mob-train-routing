@@ -176,7 +176,6 @@
 
   .home-layout__aside-content {
     padding: 30px;
-    max-width: 800px;
   }
 
   .empty-state {

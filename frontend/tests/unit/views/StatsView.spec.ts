@@ -62,7 +62,7 @@ describe('StatsView', () => {
 
     const wrapper = mountComponent()
 
-    expect(wrapper.text()).toContain('Statistiques des distances')
+    expect(wrapper.text()).toContain('Filtrer les statistiques')
   })
 
   it('fetches stats on mount', async () => {
@@ -96,7 +96,7 @@ describe('StatsView', () => {
 
     const wrapper = mountComponent()
 
-    expect(wrapper.text()).toContain('Filtrer')
+    expect(wrapper.text()).toContain('Appliquer les filtres')
   })
 
   it('calls API with filter params on button click', async () => {
@@ -111,7 +111,7 @@ describe('StatsView', () => {
     await dateInputs[1].setValue('2025-01-31')
 
     // Click filter button
-    const filterButton = wrapper.findAll('button').find((b) => b.text().includes('Filtrer'))
+    const filterButton = wrapper.findAll('button').find((b) => b.text().includes('Appliquer'))
     await filterButton?.trigger('click')
     await flushPromises()
 
@@ -152,6 +152,6 @@ describe('StatsView', () => {
     const wrapper = mountComponent()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Aucune statistique disponible')
+    expect(wrapper.text()).toContain('Aucune statistique')
   })
 })

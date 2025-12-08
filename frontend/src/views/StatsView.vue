@@ -56,55 +56,57 @@
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="center">
-      <v-col cols="12" lg="10">
-        <v-card class="mb-4">
-          <v-card-title>Statistiques des distances</v-card-title>
+  <div class="stats-layout">
+    <!-- Left panel: Filters -->
+    <main class="stats-layout__main">
+      <div class="stats-layout__main-content">
+        <h1 class="text-h5 font-weight-bold mb-6">Filtrer les statistiques</h1>
 
-          <v-card-text>
-            <v-row align="center">
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  v-model="fromDate"
-                  label="Date de début"
-                  type="date"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                />
-              </v-col>
+        <div class="stats-filters">
+          <v-text-field
+            v-model="fromDate"
+            label="Date de début"
+            type="date"
+            variant="outlined"
+            density="compact"
+            hide-details
+            class="mb-4"
+          />
 
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  v-model="toDate"
-                  label="Date de fin"
-                  type="date"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                />
-              </v-col>
+          <v-text-field
+            v-model="toDate"
+            label="Date de fin"
+            type="date"
+            variant="outlined"
+            density="compact"
+            hide-details
+            class="mb-4"
+          />
 
-              <v-col cols="12" sm="6" md="3">
-                <v-select
-                  v-model="groupBy"
-                  :items="groupByOptions"
-                  label="Grouper par"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                />
-              </v-col>
+          <v-select
+            v-model="groupBy"
+            :items="groupByOptions"
+            label="Grouper par"
+            variant="outlined"
+            density="compact"
+            hide-details
+            class="mb-6"
+          />
 
-              <v-col cols="12" sm="6" md="3">
-                <v-btn color="primary" block :loading="isLoading" @click="fetchStats">
-                  Filtrer
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+          <v-btn color="primary" block :loading="isLoading" @click="fetchStats">
+            Appliquer les filtres
+          </v-btn>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right panel: Results -->
+    <aside class="stats-layout__aside">
+      <div class="stats-layout__aside-content">
+        <h2 class="text-h6 font-weight-bold mb-4">
+          Résultats
+          <span v-if="stats.length" class="results-count">({{ stats.length }})</span>
+        </h2>
 
         <v-alert
           v-if="error"
@@ -117,8 +119,9 @@
           {{ error }}
         </v-alert>
 
-        <v-card>
-          <v-data-table :headers="headers" :items="stats" :loading="isLoading" class="elevation-1">
+        <!-- Data table -->
+        <v-card v-if="stats.length || isLoading" class="stats-table-card">
+          <v-data-table :headers="headers" :items="stats" :loading="isLoading">
             <!-- eslint-disable-next-line vue/valid-v-slot -->
             <template #item.totalDistanceKm="{ item }">
               {{ formatDistance(item.totalDistanceKm) }}
@@ -128,13 +131,87 @@
             <template #item.group="{ item }">
               {{ item.group || '-' }}
             </template>
-
-            <template #no-data>
-              <div class="text-center pa-4 text-medium-emphasis">Aucune statistique disponible</div>
-            </template>
           </v-data-table>
         </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+
+        <!-- Empty state -->
+        <div v-else-if="!isLoading" class="empty-state text-center pa-8">
+          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-chart-bar</v-icon>
+          <div class="text-h6 text-medium-emphasis">Aucune statistique</div>
+          <div class="text-body-2 text-medium-emphasis">
+            Ajustez les filtres ou calculez des trajets pour voir les statistiques.
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
 </template>
+
+<style scoped>
+  .stats-layout {
+    display: flex;
+    min-height: calc(100vh - 64px);
+  }
+
+  /* Left panel - Filters */
+  .stats-layout__main {
+    flex: 0 0 50%;
+    max-width: 400px;
+    min-width: 300px;
+    background-color: rgb(var(--v-theme-surface));
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .stats-layout__main-content {
+    padding: 30px;
+    position: sticky;
+    top: 64px;
+  }
+
+  /* Right panel - Results */
+  .stats-layout__aside {
+    flex: 1;
+    background-color: #f5f5f5;
+    overflow-y: auto;
+  }
+
+  .stats-layout__aside-content {
+    padding: 30px;
+  }
+
+  .results-count {
+    font-weight: 400;
+    color: #737885;
+  }
+
+  .stats-table-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .empty-state {
+    background-color: rgb(var(--v-theme-surface));
+    border: 1px dashed rgba(0, 0, 0, 0.12);
+  }
+
+  /* Responsive: stack on mobile */
+  @media (max-width: 960px) {
+    .stats-layout {
+      flex-direction: column;
+    }
+
+    .stats-layout__main {
+      flex: none;
+      max-width: 100%;
+      min-width: 100%;
+    }
+
+    .stats-layout__main-content {
+      padding: 20px;
+      position: static;
+    }
+
+    .stats-layout__aside-content {
+      padding: 20px;
+    }
+  }
+</style>
