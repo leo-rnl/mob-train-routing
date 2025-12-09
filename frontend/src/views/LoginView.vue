@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import LoginForm from '@/components/LoginForm.vue'
+  import TrainCanvas from '@/components/TrainCanvas.vue'
 </script>
 
 <template>
@@ -12,10 +13,10 @@
       </div>
     </main>
 
-    <!-- Right panel: Branding -->
+    <!-- Right panel: 3D Scene -->
     <aside class="login-layout__aside">
+      <TrainCanvas model-path="/models/train-scene.glb" class="login-layout__canvas" />
       <div class="login-layout__aside-content">
-        <v-icon size="80" color="white" class="mb-6">mdi-train</v-icon>
         <h2 class="text-h3 font-weight-bold mb-4">MOB Train Routing</h2>
         <p class="text-h6 font-weight-light login-layout__tagline">
           Des Alpes au Léman, optimisez vos trajets ferroviaires sur le réseau Montreux-Oberland
@@ -63,17 +64,27 @@
     max-width: 400px;
   }
 
-  /* Right panel - Branding */
+  /* Right panel - 3D Scene */
   .login-layout__aside {
     flex: 1;
+    position: relative;
     background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, #001247 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+  }
+
+  .login-layout__canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
   }
 
   .login-layout__aside-content {
+    position: relative;
+    z-index: 1;
     padding: 40px;
     max-width: 500px;
     text-align: center;
