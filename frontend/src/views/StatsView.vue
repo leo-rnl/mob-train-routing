@@ -1,7 +1,8 @@
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   import { statsApi } from '@/services/api'
   import type { DistanceStat, GroupBy } from '@/types/api'
+  import StatsChart from '@/components/StatsChart.vue'
 
   // Filter state
   const fromDate = ref<Date | null>(null)
@@ -17,6 +18,7 @@
 
   // Data state
   const stats = ref<DistanceStat[]>([])
+  const appliedGroupBy = ref<GroupBy>('none')
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -51,6 +53,7 @@
 
       const { data } = await statsApi.distances(params)
       stats.value = data.items
+      appliedGroupBy.value = groupBy.value
     } catch (e) {
       const err = e as { response?: { data?: { message?: string } } }
       error.value = err.response?.data?.message || 'Erreur lors du chargement des statistiques'
@@ -61,6 +64,17 @@
 
   function formatDistance(value: number): string {
     return value.toFixed(2)
+  }
+
+  const hasActiveFilters = computed(() => {
+    return fromDate.value !== null || toDate.value !== null || groupBy.value !== 'none'
+  })
+
+  function resetFilters() {
+    fromDate.value = null
+    toDate.value = null
+    groupBy.value = 'none'
+    fetchStats()
   }
 
   onMounted(fetchStats)
@@ -109,6 +123,17 @@
           <v-btn color="primary" block :loading="isLoading" @click="fetchStats">
             Appliquer les filtres
           </v-btn>
+
+          <v-btn
+            v-if="hasActiveFilters"
+            variant="text"
+            block
+            class="mt-2"
+            :disabled="isLoading"
+            @click="resetFilters"
+          >
+            Réinitialiser
+          </v-btn>
         </div>
       </div>
     </main>
@@ -131,6 +156,9 @@
         >
           {{ error }}
         </v-alert>
+
+        <!-- Chart -->
+        <StatsChart :data="stats" :group-by="appliedGroupBy" :loading="isLoading" />
 
         <!-- Data table -->
         <v-card v-if="stats.length || isLoading" class="stats-table-card">
@@ -199,6 +227,12 @@
 
   .stats-table-card {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: border-color 0.15s ease;
+    border: 2px solid transparent;
+  }
+
+  .stats-table-card:hover {
+    border-color: #000;
   }
 
   .empty-state {
