@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { ref, onMounted, onBeforeUnmount } from 'vue'
   import { TrainScene } from '@/three/TrainScene'
+  import { SceneDebugGUI, isDebugMode } from '@/three/SceneDebugGUI'
 
   interface Props {
     /** Path to the GLB model file */
@@ -15,6 +16,7 @@
 
   let trainScene: TrainScene | null = null
   let resizeObserver: ResizeObserver | null = null
+  let debugGUI: SceneDebugGUI | null = null
 
   onMounted(async () => {
     if (!canvasRef.value) return
@@ -33,6 +35,11 @@
         trainScene?.resize()
       })
       resizeObserver.observe(canvasRef.value.parentElement!)
+
+      // Initialize debug GUI if in debug mode
+      if (isDebugMode()) {
+        debugGUI = new SceneDebugGUI(trainScene)
+      }
     } catch (error) {
       console.error('Failed to initialize train scene:', error)
       hasError.value = true
@@ -41,6 +48,7 @@
   })
 
   onBeforeUnmount(() => {
+    debugGUI?.dispose()
     resizeObserver?.disconnect()
     trainScene?.dispose()
   })

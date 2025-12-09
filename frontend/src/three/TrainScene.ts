@@ -11,6 +11,46 @@ export interface TrainSceneOptions {
   antialias?: boolean
 }
 
+/** Tweakable scene parameters */
+export interface SceneParams {
+  camera: {
+    distance: number
+    angle: number
+    offsetX: number
+    elevation: number
+    fov: number
+  }
+  model: {
+    scale: number
+    rotationY: number
+  }
+  lighting: {
+    ambient: number
+    main: number
+    fill: number
+  }
+}
+
+/** Default scene parameters */
+const DEFAULT_PARAMS: SceneParams = {
+  camera: {
+    distance: 0.5,
+    angle: Math.PI / 3,
+    offsetX: -15.8,
+    elevation: 0.3,
+    fov: 50,
+  },
+  model: {
+    scale: 1.5,
+    rotationY: Math.PI,
+  },
+  lighting: {
+    ambient: 0.6,
+    main: 1.0,
+    fill: 0.4,
+  },
+}
+
 /**
  * TrainScene - Manages a Three.js scene for displaying a train GLB model
  *
@@ -31,6 +71,12 @@ export class TrainScene {
   private animationId: number | null = null
   private model: THREE.Group | null = null
   private options: Required<TrainSceneOptions>
+  private params: SceneParams
+  private lights: {
+    ambient: THREE.AmbientLight
+    main: THREE.DirectionalLight
+    fill: THREE.DirectionalLight
+  } | null = null
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -42,11 +88,14 @@ export class TrainScene {
       ...options,
     }
 
+    // Initialize params with defaults
+    this.params = structuredClone(DEFAULT_PARAMS)
+
     // Scene setup
     this.scene = new THREE.Scene()
 
     // Camera setup - will be adjusted on resize
-    this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000)
+    this.camera = new THREE.PerspectiveCamera(this.params.camera.fov, 1, 0.1, 1000)
     this.camera.position.set(0, 2, 5)
     this.camera.lookAt(0, 0, 0)
 
@@ -77,19 +126,22 @@ export class TrainScene {
    */
   private setupLights(): void {
     // Ambient light for overall illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+    const ambientLight = new THREE.AmbientLight(0xffffff, this.params.lighting.ambient)
     this.scene.add(ambientLight)
 
     // Main directional light (sun-like)
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1)
+    const mainLight = new THREE.DirectionalLight(0xffffff, this.params.lighting.main)
     mainLight.position.set(5, 10, 7)
     mainLight.castShadow = false
     this.scene.add(mainLight)
 
     // Fill light from the opposite side
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4)
+    const fillLight = new THREE.DirectionalLight(0xffffff, this.params.lighting.fill)
     fillLight.position.set(-5, 5, -5)
     this.scene.add(fillLight)
+
+    // Store references for later updates
+    this.lights = { ambient: ambientLight, main: mainLight, fill: fillLight }
   }
 
   /**
@@ -101,8 +153,8 @@ export class TrainScene {
         this.options.modelPath,
         (gltf: GLTF) => {
           this.model = gltf.scene
-          this.model.scale.setScalar(1.5)
-          this.model.rotation.y = Math.PI // 180 degrees
+          this.model.scale.setScalar(this.params.model.scale)
+          this.model.rotation.y = this.params.model.rotationY
           this.scene.add(this.model)
           this.fitCameraToModel()
           resolve()
@@ -128,24 +180,26 @@ export class TrainScene {
 
     // Calculate the distance needed to fit the model
     const maxDim = Math.max(size.x, size.y, size.z)
-    const fov = this.camera.fov * (Math.PI / 180)
+    const fov = this.params.camera.fov * (Math.PI / 180)
     let cameraDistance = maxDim / (2 * Math.tan(fov / 2))
 
-    // Closer view - smaller multiplier = bigger model on screen
-    cameraDistance *= 0.5
+    // Apply distance multiplier from params
+    cameraDistance *= this.params.camera.distance
 
-    // Isometric-like camera position: offset on X and Z for diagonal view
-    // Steeper angle for rails to span across the view diagonally
-    const angle = Math.PI / 3 // 60 degrees (more diagonal)
-    const offsetX = -15.8 // Shift view to the left
+    // Isometric-like camera position using params
+    const angle = this.params.camera.angle
+    const offsetX = this.params.camera.offsetX
+    const elevation = this.params.camera.elevation
+
     this.camera.position.set(
       center.x + cameraDistance * Math.sin(angle) * 0.8 + offsetX,
-      center.y + cameraDistance * 0.3, // Slight elevation
+      center.y + cameraDistance * elevation,
       center.z + cameraDistance * Math.cos(angle) * 0.9
     )
     this.camera.lookAt(center.x + offsetX, center.y, center.z)
 
-    // Update near/far planes
+    // Update camera FOV and projection
+    this.camera.fov = this.params.camera.fov
     this.camera.near = cameraDistance / 100
     this.camera.far = cameraDistance * 100
     this.camera.updateProjectionMatrix()
@@ -208,6 +262,37 @@ export class TrainScene {
    */
   getModel(): THREE.Group | null {
     return this.model
+  }
+
+  /**
+   * Get current scene parameters (for debug GUI)
+   */
+  getParams(): SceneParams {
+    return this.params
+  }
+
+  /**
+   * Update scene parameters and apply changes
+   */
+  updateParams(category: 'camera' | 'model' | 'lighting'): void {
+    switch (category) {
+      case 'camera':
+        this.fitCameraToModel()
+        break
+      case 'model':
+        if (this.model) {
+          this.model.scale.setScalar(this.params.model.scale)
+          this.model.rotation.y = this.params.model.rotationY
+        }
+        break
+      case 'lighting':
+        if (this.lights) {
+          this.lights.ambient.intensity = this.params.lighting.ambient
+          this.lights.main.intensity = this.params.lighting.main
+          this.lights.fill.intensity = this.params.lighting.fill
+        }
+        break
+    }
   }
 
   /**
