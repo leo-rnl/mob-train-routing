@@ -16,24 +16,33 @@
     <!-- Right panel: 3D Scene -->
     <aside class="login-layout__aside">
       <TrainCanvas model-path="/models/train-scene.glb" class="login-layout__canvas" />
-      <div class="login-layout__aside-content">
-        <h2 class="text-h3 font-weight-bold mb-4">MOB Train Routing</h2>
-        <p class="text-h6 font-weight-light login-layout__tagline">
-          Des Alpes au Léman, optimisez vos trajets ferroviaires sur le réseau Montreux-Oberland
-          Bernois.
+      <!-- Top left: Title + tagline -->
+      <div class="login-layout__header">
+        <div class="login-layout__title-box">
+          <span class="login-layout__title-mob">MOB</span>
+          <span class="login-layout__title-main">Train Routing</span>
+        </div>
+        <p class="login-layout__tagline">
+          Des Alpes au Léman,<br />
+          optimisez vos trajets ferroviaires<br />
+          sur le réseau Montreux-Oberland Bernois.
         </p>
-        <div class="login-layout__stats mt-8">
+      </div>
+
+      <!-- Bottom right: Stats -->
+      <div class="login-layout__footer">
+        <div class="login-layout__stats">
           <div class="login-layout__stat">
-            <span class="text-h4 font-weight-bold">86</span>
-            <span class="text-body-2">stations</span>
+            <span class="login-layout__stat-value">86</span>
+            <span class="login-layout__stat-label">stations</span>
           </div>
           <div class="login-layout__stat">
-            <span class="text-h4 font-weight-bold">2</span>
-            <span class="text-body-2">lignes</span>
+            <span class="login-layout__stat-value">2</span>
+            <span class="login-layout__stat-label">lignes</span>
           </div>
           <div class="login-layout__stat">
-            <span class="text-h4 font-weight-bold">63</span>
-            <span class="text-body-2">km de voies</span>
+            <span class="login-layout__stat-value">63</span>
+            <span class="login-layout__stat-label">km de voies</span>
           </div>
         </div>
       </div>
@@ -68,11 +77,8 @@
   .login-layout__aside {
     flex: 1;
     position: relative;
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, #001247 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background-color: #e8e8e8;
+    color: #0c0d19;
     overflow: hidden;
   }
 
@@ -82,31 +88,84 @@
     z-index: 0;
   }
 
-  .login-layout__aside-content {
-    position: relative;
+  /* Top left: Title + tagline */
+  .login-layout__header {
+    position: absolute;
+    top: 40px;
+    left: 40px;
     z-index: 1;
-    padding: 40px;
-    max-width: 500px;
-    text-align: center;
+  }
+
+  .login-layout__title-box {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 32px;
+    border: 2px solid #0c0d19;
+    background-color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 24px;
+  }
+
+  .login-layout__title-mob {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #0c0d19;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+
+  .login-layout__title-main {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgb(var(--v-theme-primary));
   }
 
   .login-layout__tagline {
-    opacity: 0.9;
-    line-height: 1.6;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #0c0d19;
+    max-width: 420px;
+    opacity: 0.85;
+  }
+
+  /* Bottom right: Stats */
+  .login-layout__footer {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    z-index: 1;
   }
 
   .login-layout__stats {
-    display: flex;
-    justify-content: center;
-    gap: 48px;
+    display: inline-flex;
+    gap: 24px;
+    padding: 16px 24px;
+    border: 2px solid #0c0d19;
+    background-color: rgba(255, 255, 255, 0.9);
   }
 
   .login-layout__stat {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    opacity: 0.9;
+    gap: 2px;
+  }
+
+  .login-layout__stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: rgb(var(--v-theme-primary));
+  }
+
+  .login-layout__stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #0c0d19;
   }
 
   /* Responsive: stack on mobile */
