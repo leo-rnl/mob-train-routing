@@ -17,6 +17,9 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $remember_token
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|static where(string $column, mixed $value)
+ * @method static static|null first()
  */
 class User extends Authenticatable
 {
