@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import { TrainAnimator, type AnimationParams, DEFAULT_ANIMATION_PARAMS } from './TrainAnimator'
 
 export interface TrainSceneOptions {
   /** Path to the GLB scene file */
@@ -29,6 +30,7 @@ export interface SceneParams {
     main: number
     fill: number
   }
+  animation: AnimationParams
 }
 
 /** Default scene parameters */
@@ -36,19 +38,20 @@ const DEFAULT_PARAMS: SceneParams = {
   camera: {
     distance: 0.5,
     angle: Math.PI / 3,
-    offsetX: -15.8,
+    offsetX: -27,
     elevation: 0.3,
-    fov: 50,
+    fov: 30,
   },
   model: {
     scale: 1.5,
     rotationY: Math.PI,
   },
   lighting: {
-    ambient: 0.6,
-    main: 1.0,
-    fill: 0.4,
+    ambient: 1.5,
+    main: 3.0,
+    fill: 1.0,
   },
+  animation: DEFAULT_ANIMATION_PARAMS,
 }
 
 /**
@@ -77,6 +80,12 @@ export class TrainScene {
     main: THREE.DirectionalLight
     fill: THREE.DirectionalLight
   } | null = null
+  private animator: TrainAnimator | null = null
+  private clock = new THREE.Clock()
+
+  // Reference width for FOV scaling (prevents seeing rail edges on ultrawide)
+  // Lower value = more aggressive zoom on wide screens
+  private static readonly REFERENCE_WIDTH = 1600
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -157,6 +166,10 @@ export class TrainScene {
           this.model.rotation.y = this.params.model.rotationY
           this.scene.add(this.model)
           this.fitCameraToModel()
+
+          // Initialize train animator
+          this.animator = new TrainAnimator(this.model, this.camera, this.params.animation)
+
           resolve()
         },
         undefined, // Progress callback (unused)
@@ -219,6 +232,15 @@ export class TrainScene {
     this.canvas.height = height
 
     this.camera.aspect = width / height
+
+    // Adjust FOV for wide viewports to prevent seeing rail edges
+    if (width > TrainScene.REFERENCE_WIDTH) {
+      const scaleFactor = TrainScene.REFERENCE_WIDTH / width
+      this.camera.fov = this.params.camera.fov * scaleFactor
+    } else {
+      this.camera.fov = this.params.camera.fov
+    }
+
     this.camera.updateProjectionMatrix()
 
     this.renderer.setSize(width, height)
@@ -229,6 +251,11 @@ export class TrainScene {
    */
   private render = (): void => {
     this.animationId = requestAnimationFrame(this.render)
+
+    // Update train animations
+    const deltaTime = this.clock.getDelta() * 1000 // Convert to ms-like scale
+    this.animator?.update(deltaTime)
+
     this.renderer.render(this.scene, this.camera)
   }
 
@@ -300,6 +327,9 @@ export class TrainScene {
    */
   dispose(): void {
     this.stop()
+
+    // Dispose animator
+    this.animator?.dispose()
 
     // Dispose of geometries and materials
     this.scene.traverse((object) => {

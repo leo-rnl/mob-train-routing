@@ -64,6 +64,18 @@ export class SceneDebugGUI {
       .name('Fill Light')
       .onChange(() => scene.updateParams('lighting'))
     lightingFolder.open()
+
+    // Animation folder
+    const animationFolder = this.gui.addFolder('🚂 Animation')
+    animationFolder.add(params.animation, 'paused').name('Paused')
+    animationFolder.add(params.animation, 'respawnDelay', 0, 15000, 500).name('Respawn Delay (ms)')
+    animationFolder.add(params.animation, 'train1Speed', 0.01, 0.5, 0.01).name('Train 1 Speed')
+    animationFolder.add(params.animation, 'train1StartY', -20000, 5000, 100).name('Train 1 Start Y')
+    animationFolder.add(params.animation, 'train1EndY', -20000, 5000, 100).name('Train 1 End Y')
+    animationFolder.add(params.animation, 'train2Speed', 0.01, 0.5, 0.01).name('Train 2 Speed')
+    animationFolder.add(params.animation, 'train2StartY', -20000, 5000, 100).name('Train 2 Start Y')
+    animationFolder.add(params.animation, 'train2EndY', -20000, 5000, 100).name('Train 2 End Y')
+    animationFolder.open()
   }
 
   /**
