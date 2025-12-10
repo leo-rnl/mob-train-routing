@@ -23,7 +23,11 @@ class GraphService
             return;
         }
 
-        $distances = Distance::all();
+        // Railway network distances are static reference data.
+        // Cache indefinitely; use cache()->forget('railway_distances') to invalidate if needed.
+        $distances = cache()->remember('railway_distances', null, fn () => Distance::query()
+            ->select(['parent_station', 'child_station', 'distance_km'])
+            ->get());
 
         foreach ($distances as $distance) {
             $parent = $distance->parent_station;
