@@ -32,16 +32,16 @@
       <!-- Bottom right: Stats -->
       <div class="login-layout__footer">
         <div class="login-layout__stats" role="group" aria-label="Statistiques du réseau MOB">
-          <div class="login-layout__stat" aria-label="86 stations">
-            <span class="login-layout__stat-value" aria-hidden="true">86</span>
+          <div class="login-layout__stat" aria-label="101 stations">
+            <span class="login-layout__stat-value" aria-hidden="true">101</span>
             <span class="login-layout__stat-label" aria-hidden="true">stations</span>
           </div>
           <div class="login-layout__stat" aria-label="2 lignes ferroviaires">
             <span class="login-layout__stat-value" aria-hidden="true">2</span>
             <span class="login-layout__stat-label" aria-hidden="true">lignes</span>
           </div>
-          <div class="login-layout__stat" aria-label="63 kilomètres de voies">
-            <span class="login-layout__stat-value" aria-hidden="true">63</span>
+          <div class="login-layout__stat" aria-label="142 kilomètres de voies">
+            <span class="login-layout__stat-value" aria-hidden="true">142</span>
             <span class="login-layout__stat-label" aria-hidden="true">km de voies</span>
           </div>
         </div>
