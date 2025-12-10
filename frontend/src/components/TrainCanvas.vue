@@ -65,8 +65,9 @@
     <div v-if="isLoading" class="train-canvas-loader" aria-label="Chargement de la scène 3D">
       <v-progress-circular indeterminate color="white" size="48" aria-hidden="true" />
     </div>
-    <div v-if="hasError" class="train-canvas-fallback" aria-label="Erreur de chargement">
-      <v-icon size="80" color="white" class="mb-4" aria-hidden="true">mdi-train</v-icon>
+    <div v-if="hasError" class="train-canvas-fallback">
+      <v-icon size="64" color="white" class="mb-2" aria-hidden="true">mdi-train</v-icon>
+      <span class="train-canvas-fallback__text">Scène 3D indisponible</span>
     </div>
   </div>
 </template>
@@ -96,5 +97,11 @@
 
   .train-canvas-fallback {
     flex-direction: column;
+  }
+
+  .train-canvas-fallback__text {
+    color: white;
+    font-size: 0.875rem;
+    opacity: 0.8;
   }
 </style>

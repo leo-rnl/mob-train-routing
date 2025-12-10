@@ -169,6 +169,17 @@
 <template>
   <div class="route-form">
     <v-alert
+      v-if="stationsStore.error"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      role="alert"
+      aria-live="polite"
+    >
+      {{ stationsStore.error }}
+    </v-alert>
+
+    <v-alert
       v-if="error"
       type="error"
       variant="tonal"

@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', {
         return true
       } catch (e) {
         const error = e as AxiosError<ApiError>
-        this.error = error.response?.data?.message || 'Invalid credentials'
+        this.error = error.response?.data?.message || 'Identifiants invalides'
         return false
       } finally {
         this.isLoading = false

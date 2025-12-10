@@ -111,7 +111,7 @@ export const useStationsStore = defineStore('stations', {
         this.saveToCache()
       } catch (e) {
         const error = e as AxiosError<ApiError>
-        this.error = error.response?.data?.message || 'Failed to load stations'
+        this.error = error.response?.data?.message || 'Erreur lors du chargement des gares'
       } finally {
         this.isLoading = false
       }
