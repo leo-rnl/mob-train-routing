@@ -50,26 +50,55 @@
   const DEFAULT_STATIONS_COUNT = 5
 
   // Computed filtered lists based on search (local filtering from store)
+  // Always include the selected station to ensure Vuetify can display its longName
   const fromStations = computed(() => {
     const search = fromSearch.value.toLowerCase()
+    let results: typeof stationsStore.stationsList
+
     if (!search || search.length < 2) {
-      // Show first N stations by default
-      return stationsStore.stationsList.slice(0, DEFAULT_STATIONS_COUNT)
+      results = stationsStore.stationsList.slice(0, DEFAULT_STATIONS_COUNT)
+    } else {
+      results = stationsStore.stationsList.filter(
+        (s) =>
+          s.shortName.toLowerCase().includes(search) || s.longName.toLowerCase().includes(search)
+      )
     }
-    return stationsStore.stationsList.filter(
-      (s) => s.shortName.toLowerCase().includes(search) || s.longName.toLowerCase().includes(search)
-    )
+
+    // Ensure selected station is always in the list
+    if (fromStation.value) {
+      const selectedInResults = results.some((s) => s.shortName === fromStation.value)
+      if (!selectedInResults) {
+        const selected = stationsStore.stationsList.find((s) => s.shortName === fromStation.value)
+        if (selected) results = [selected, ...results]
+      }
+    }
+
+    return results
   })
 
   const toStations = computed(() => {
     const search = toSearch.value.toLowerCase()
+    let results: typeof stationsStore.stationsList
+
     if (!search || search.length < 2) {
-      // Show first N stations by default
-      return stationsStore.stationsList.slice(0, DEFAULT_STATIONS_COUNT)
+      results = stationsStore.stationsList.slice(0, DEFAULT_STATIONS_COUNT)
+    } else {
+      results = stationsStore.stationsList.filter(
+        (s) =>
+          s.shortName.toLowerCase().includes(search) || s.longName.toLowerCase().includes(search)
+      )
     }
-    return stationsStore.stationsList.filter(
-      (s) => s.shortName.toLowerCase().includes(search) || s.longName.toLowerCase().includes(search)
-    )
+
+    // Ensure selected station is always in the list
+    if (toStation.value) {
+      const selectedInResults = results.some((s) => s.shortName === toStation.value)
+      if (!selectedInResults) {
+        const selected = stationsStore.stationsList.find((s) => s.shortName === toStation.value)
+        if (selected) results = [selected, ...results]
+      }
+    }
+
+    return results
   })
 
   // Submit state
