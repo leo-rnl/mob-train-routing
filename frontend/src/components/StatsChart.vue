@@ -194,8 +194,12 @@
   <v-card class="stats-chart-card mb-6">
     <v-card-text class="pa-4">
       <!-- Loading state -->
-      <div v-if="loading" class="chart-container d-flex align-center justify-center">
-        <v-progress-circular indeterminate color="primary" />
+      <div
+        v-if="loading"
+        class="chart-container d-flex align-center justify-center"
+        aria-label="Chargement des statistiques"
+      >
+        <v-progress-circular indeterminate color="primary" aria-hidden="true" />
       </div>
 
       <!-- Empty state -->
@@ -203,12 +207,19 @@
         v-else-if="!hasData"
         class="chart-container d-flex flex-column align-center justify-center text-medium-emphasis"
       >
-        <v-icon size="48" color="grey-lighten-1" class="mb-2">mdi-chart-bar</v-icon>
+        <v-icon size="48" color="grey-lighten-1" class="mb-2" aria-hidden="true"
+          >mdi-chart-bar</v-icon
+        >
         <span class="text-body-2">Aucune donnée à afficher</span>
       </div>
 
       <!-- Chart -->
-      <div v-else class="chart-container">
+      <div
+        v-else
+        class="chart-container"
+        role="img"
+        aria-label="Graphique des distances par code analytique"
+      >
         <component :is="chartComponent" :data="chartData" :options="chartOptions" />
       </div>
     </v-card-text>

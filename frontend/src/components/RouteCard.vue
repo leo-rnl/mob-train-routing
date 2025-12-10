@@ -56,12 +56,21 @@
     }"
   >
     <!-- Clickable header zone -->
-    <div class="route-card__clickable" @click="toggleExpand">
+    <div
+      class="route-card__clickable"
+      role="button"
+      tabindex="0"
+      :aria-expanded="isExpanded"
+      :aria-label="`Trajet ${fromStationName} vers ${toStationName}, ${route.distanceKm.toFixed(2)} kilomètres. ${isExpanded ? 'Cliquez pour réduire' : 'Cliquez pour voir les détails'}`"
+      @click="toggleExpand"
+      @keydown.enter="toggleExpand"
+      @keydown.space.prevent="toggleExpand"
+    >
       <!-- Header: Stations + Distance -->
       <div class="route-card__header">
         <div class="route-card__stations">
           <span class="route-card__station">{{ fromStationName }}</span>
-          <v-icon size="small" class="route-card__arrow">mdi-arrow-right</v-icon>
+          <v-icon size="small" class="route-card__arrow" aria-hidden="true">mdi-arrow-right</v-icon>
           <span class="route-card__station">{{ toStationName }}</span>
         </div>
         <div class="route-card__distance">{{ route.distanceKm.toFixed(2) }} km</div>
@@ -70,15 +79,15 @@
       <!-- Metadata: Code + Date + Stops -->
       <div class="route-card__meta">
         <span class="route-card__meta-item">
-          <v-icon size="14" class="mr-1">mdi-tag-outline</v-icon>
+          <v-icon size="14" class="mr-1" aria-hidden="true">mdi-tag-outline</v-icon>
           {{ route.analyticCode }}
         </span>
         <span class="route-card__meta-item">
-          <v-icon size="14" class="mr-1">mdi-map-marker-path</v-icon>
+          <v-icon size="14" class="mr-1" aria-hidden="true">mdi-map-marker-path</v-icon>
           {{ route.path.length <= 2 ? 'Direct' : `${route.path.length - 2} arrêt(s)` }}
         </span>
         <span class="route-card__meta-item">
-          <v-icon size="14" class="mr-1">mdi-clock-outline</v-icon>
+          <v-icon size="14" class="mr-1" aria-hidden="true">mdi-clock-outline</v-icon>
           {{ formattedDate }}
         </span>
       </div>
@@ -117,6 +126,11 @@
 
   .route-card__clickable:hover {
     opacity: 0.9;
+  }
+
+  .route-card__clickable:focus-visible {
+    outline: 2px solid #0c0d19;
+    outline-offset: 2px;
   }
 
   .route-card:hover {

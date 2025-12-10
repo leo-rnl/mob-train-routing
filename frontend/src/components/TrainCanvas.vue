@@ -56,12 +56,17 @@
 
 <template>
   <div class="train-canvas-container">
-    <canvas ref="canvasRef" class="train-canvas" />
-    <div v-if="isLoading" class="train-canvas-loader">
-      <v-progress-circular indeterminate color="white" size="48" />
+    <canvas
+      ref="canvasRef"
+      class="train-canvas"
+      role="img"
+      aria-label="Animation 3D d'un train MOB traversant les Alpes suisses"
+    />
+    <div v-if="isLoading" class="train-canvas-loader" aria-label="Chargement de la scène 3D">
+      <v-progress-circular indeterminate color="white" size="48" aria-hidden="true" />
     </div>
-    <div v-if="hasError" class="train-canvas-fallback">
-      <v-icon size="80" color="white" class="mb-4">mdi-train</v-icon>
+    <div v-if="hasError" class="train-canvas-fallback" aria-label="Erreur de chargement">
+      <v-icon size="80" color="white" class="mb-4" aria-hidden="true">mdi-train</v-icon>
     </div>
   </div>
 </template>

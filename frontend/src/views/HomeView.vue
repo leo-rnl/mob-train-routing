@@ -107,7 +107,15 @@
           <span v-if="meta?.total" class="routes-count">({{ meta.total }})</span>
         </h2>
 
-        <v-alert v-if="error" type="error" variant="tonal" closable @click:close="error = null">
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+          closable
+          role="alert"
+          aria-live="polite"
+          @click:close="error = null"
+        >
           {{ error }}
         </v-alert>
 
@@ -127,7 +135,14 @@
 
         <!-- Load more button -->
         <div v-if="hasMore && !isLoading" class="text-center mt-4">
-          <v-btn variant="outlined" color="primary" @click="loadMore">Charger plus</v-btn>
+          <v-btn
+            variant="outlined"
+            color="primary"
+            aria-label="Charger plus de trajets"
+            @click="loadMore"
+          >
+            Charger plus
+          </v-btn>
         </div>
 
         <!-- Empty state -->
@@ -135,7 +150,9 @@
           v-if="routes.length === 0 && !lastCalculated && !isLoading"
           class="empty-state text-center pa-8"
         >
-          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-train-variant</v-icon>
+          <v-icon size="64" color="grey-lighten-1" class="mb-4" aria-hidden="true">
+            mdi-train-variant
+          </v-icon>
           <div class="text-h6 text-medium-emphasis">Aucun trajet</div>
           <div class="text-body-2 text-medium-emphasis">
             Calculez votre premier trajet pour le voir apparaître ici.

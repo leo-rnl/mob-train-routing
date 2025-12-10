@@ -130,6 +130,7 @@
             block
             class="mt-2"
             :disabled="isLoading"
+            aria-label="Réinitialiser tous les filtres"
             @click="resetFilters"
           >
             Réinitialiser
@@ -152,6 +153,8 @@
           variant="tonal"
           class="mb-4"
           closable
+          role="alert"
+          aria-live="polite"
           @click:close="error = null"
         >
           {{ error }}
@@ -177,7 +180,9 @@
 
         <!-- Empty state -->
         <div v-else-if="!isLoading" class="empty-state text-center pa-8">
-          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-chart-bar</v-icon>
+          <v-icon size="64" color="grey-lighten-1" class="mb-4" aria-hidden="true"
+            >mdi-chart-bar</v-icon
+          >
           <div class="text-h6 text-medium-emphasis">Aucune statistique</div>
           <div class="text-body-2 text-medium-emphasis">
             Ajustez les filtres ou calculez des trajets pour voir les statistiques.

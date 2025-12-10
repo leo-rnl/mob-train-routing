@@ -32,8 +32,9 @@
       v-if="!authStore.isInitialized"
       :model-value="true"
       class="align-center justify-center"
+      aria-label="Chargement de l'application"
     >
-      <v-progress-circular indeterminate size="64" color="primary" />
+      <v-progress-circular indeterminate size="64" color="primary" aria-hidden="true" />
     </v-overlay>
 
     <template v-else>
@@ -65,10 +66,15 @@
 
         <v-menu offset-y>
           <template #activator="{ props }">
-            <v-btn v-bind="props" variant="plain" class="user-menu-btn mr-2">
-              <v-icon size="small" class="mr-2">mdi-account-circle</v-icon>
+            <v-btn
+              v-bind="props"
+              variant="plain"
+              class="user-menu-btn mr-2"
+              aria-label="Menu utilisateur"
+            >
+              <v-icon size="small" class="mr-2" aria-hidden="true">mdi-account-circle</v-icon>
               <span class="text-body-2 font-weight-medium">{{ authStore.user?.name }}</span>
-              <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
+              <v-icon size="small" class="ml-1" aria-hidden="true">mdi-chevron-down</v-icon>
             </v-btn>
           </template>
           <v-list density="compact" min-width="160">
@@ -78,7 +84,7 @@
             <v-divider />
             <v-list-item @click="handleLogout">
               <template #prepend>
-                <v-icon size="small">mdi-logout</v-icon>
+                <v-icon size="small" aria-hidden="true">mdi-logout</v-icon>
               </template>
               <v-list-item-title>Déconnexion</v-list-item-title>
             </v-list-item>
@@ -111,6 +117,18 @@
   .v-btn {
     text-transform: none;
     letter-spacing: 0;
+  }
+
+  /* Global focus visible style for accessibility */
+  :focus-visible {
+    outline: 2px solid #0c0d19;
+    outline-offset: 2px;
+  }
+
+  /* Override for Vuetify buttons which have their own focus style */
+  .v-btn:focus-visible {
+    outline: 2px solid #0c0d19;
+    outline-offset: 2px;
   }
 </style>
 

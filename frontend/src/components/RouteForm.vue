@@ -145,6 +145,8 @@
       variant="tonal"
       class="mb-4"
       closable
+      role="alert"
+      aria-live="polite"
       @click:close="error = null"
     >
       {{ error }}
@@ -199,9 +201,10 @@
           variant="flat"
           class="swap-btn"
           :disabled="!fromStation && !toStation"
+          aria-label="Inverser les gares de départ et d'arrivée"
           @click="swapStations"
         >
-          <v-icon>mdi-swap-vertical</v-icon>
+          <v-icon aria-hidden="true">mdi-swap-vertical</v-icon>
         </v-btn>
       </div>
 

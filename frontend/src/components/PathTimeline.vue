@@ -43,11 +43,15 @@
         :key="`${station}-${index}`"
         class="timeline__item"
       >
-        <!-- Dot -->
-        <div class="timeline__dot" :class="{ 'timeline__dot--terminus': isTerminus(index) }" />
+        <!-- Dot (decorative) -->
+        <div
+          class="timeline__dot"
+          :class="{ 'timeline__dot--terminus': isTerminus(index) }"
+          aria-hidden="true"
+        />
 
-        <!-- Line (not on last item) -->
-        <div v-if="index < displayedPath.length - 1" class="timeline__line" />
+        <!-- Line (decorative, not on last item) -->
+        <div v-if="index < displayedPath.length - 1" class="timeline__line" aria-hidden="true" />
 
         <!-- Station info -->
         <div class="timeline__content">
@@ -59,7 +63,17 @@
       </div>
     </div>
 
-    <button v-if="hasMiddleStations" class="timeline__toggle" @click="toggleExpand">
+    <button
+      v-if="hasMiddleStations"
+      class="timeline__toggle"
+      :aria-expanded="isExpanded"
+      :aria-label="
+        isExpanded
+          ? 'Réduire la liste des arrêts'
+          : `Afficher ${hiddenCount} arrêt(s) intermédiaire(s)`
+      "
+      @click="toggleExpand"
+    >
       {{ isExpanded ? 'Réduire' : `+ ${hiddenCount} arrêt(s)` }}
     </button>
   </div>
@@ -149,5 +163,10 @@
 
   .timeline__toggle:hover {
     text-decoration: underline;
+  }
+
+  .timeline__toggle:focus-visible {
+    outline: 2px solid #0c0d19;
+    outline-offset: 2px;
   }
 </style>
