@@ -1,0 +1,41 @@
+# =============================================================================
+# Traefik Static Configuration
+# MOB Train Routing - HTTPS Reverse Proxy
+# =============================================================================
+
+# API and Dashboard
+api:
+  dashboard: true
+  insecure: true  # Dashboard accessible on :8080 without auth (disable in real prod)
+
+# Entrypoints
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+
+# Providers
+providers:
+  # File provider for dynamic configuration (services, routers, TLS)
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+# Healthcheck endpoint
+ping:
+  entryPoint: websecure
+
+# Logging
+log:
+  level: INFO
+  format: common
+
+accessLog:
+  format: common

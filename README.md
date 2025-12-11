@@ -18,6 +18,8 @@ L'application est accessible sur :
 - **Frontend** : http://localhost:3000
 - **API** : http://localhost:8000
 
+> Pour le déploiement production avec HTTPS, voir la section [Déploiement](#déploiement).
+
 **Compte de démonstration** :
 ```
 Email : demo@mob.ch
@@ -227,13 +229,44 @@ npm run test            # Vitest
 
 ## Déploiement
 
-### Docker Compose
+### Production avec HTTPS (Traefik)
+
+Le déploiement production utilise **Traefik** comme reverse proxy avec terminaison TLS.
 
 ```bash
+# 1. Générer les certificats self-signed (une seule fois)
+./traefik/generate-certs.sh
+
+# 2. Copier et éditer les variables d'environnement
 cp .env.example .env
-# Éditer .env avec les valeurs de production
-docker compose -f docker-compose.prod.yml up -d
+
+# 3. Démarrer le stack
+docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+L'application est accessible sur :
+- **Frontend** : https://localhost
+- **API** : https://localhost/api/v1
+- **Dashboard Traefik** : http://localhost:8080 (désactiver en production réelle)
+
+> **Note** : Le navigateur affichera un avertissement pour le certificat self-signed. Acceptez-le ou ajoutez le certificat au truststore système.
+
+<details>
+<summary>Ajouter le certificat au truststore (optionnel)</summary>
+
+**macOS** :
+```bash
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain \
+  traefik/certs/localhost.crt
+```
+
+**Linux (Ubuntu/Debian)** :
+```bash
+sudo cp traefik/certs/localhost.crt /usr/local/share/ca-certificates/mob-localhost.crt
+sudo update-ca-certificates
+```
+</details>
 
 ### Images GHCR
 
@@ -246,9 +279,9 @@ docker pull ghcr.io/leo-rnl/mob-train-routing-frontend:latest
 
 | Variable | Description |
 |----------|-------------|
-| `APP_KEY` | Clé Laravel |
-| `DB_PASSWORD` | Mot de passe PostgreSQL |
-| `APP_URL` | URL publique du backend |
+| `APP_KEY` | Clé Laravel (générer avec `php artisan key:generate --show`) |
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
+| `APP_URL` | URL publique (`https://localhost` par défaut) |
 
 ---
 

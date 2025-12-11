@@ -4,6 +4,9 @@
 .claude/extensions.md
 .claude/Brief_defi_fullstack.md
 
+# Traefik - self-signed certificates (generated locally)
+traefik/certs/
+
 # IDE
 .idea/
 .vscode/
