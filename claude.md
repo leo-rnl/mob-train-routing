@@ -220,7 +220,7 @@ Calcule un trajet entre deux stations.
 
 ### Réseau ferroviaire
 
-**Ligne MOB** (65 segments) : Montreux → Zweisimmen, avec bifurcations vers Lenk et Interlaken Ost
+**Ligne MOB** (63 segments) : Montreux → Zweisimmen, avec bifurcations vers Lenk et Interlaken Ost
 
 **Ligne MVR-ce** (21 segments) : Vevey → Les Pléiades, avec connexion à MOB via Chamby (CABY)
 

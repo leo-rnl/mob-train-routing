@@ -240,7 +240,7 @@ npm run type-check      # TypeScript
 npm run test            # Vitest
 ```
 
-**Debug 3D** : http://localhost:3000/login#debug
+**Debug 3D** (dev uniquement) : http://localhost:3000/login#debug
 
 ---
 
@@ -306,7 +306,8 @@ docker pull ghcr.io/leo-rnl/mob-train-routing-frontend:latest
 
 - **Performance** : Cache Redis pour le graphe Dijkstra
 - **Données** : Table de référence pour les codes analytiques
-- **Onboarding** : Afficher un tag analytique (ex: "VOYAGEUR-205") sur chaque train avec le kilométrage en temps réel
+- **Statistiques** : Métriques enrichies par code analytique (distance moyenne, nombre de trajets, nombre moyen de stations traversées) avec filtrage par utilisateur
+- **Onboarding** : Sur la scène 3D du login, afficher un tag analytique fictif sur chaque train avec un kilométrage qui s'incrémente — une façon passive d'illustrer le métier de l'application, pertinente pour des utilisateurs métier (gestionnaires de trafic, analystes)
 
 ### Documentation
 
