@@ -112,19 +112,19 @@ describe('RouteCard', () => {
   })
 
   describe('Expand/collapse', () => {
-    it('toggles expanded state on title click', async () => {
+    it('toggles expanded state on header click', async () => {
       const wrapper = mountComponent({ route: mockRoute, highlight: false })
 
       const vm = wrapper.vm as unknown as { isExpanded: boolean }
       expect(vm.isExpanded).toBe(false)
 
-      // Click on the card title to toggle
-      const cardTitle = wrapper.find('.v-card-title')
-      await cardTitle.trigger('click')
+      // Click on the clickable header zone to toggle
+      const clickable = wrapper.find('.route-card__clickable')
+      await clickable.trigger('click')
 
       expect(vm.isExpanded).toBe(true)
 
-      await cardTitle.trigger('click')
+      await clickable.trigger('click')
 
       expect(vm.isExpanded).toBe(false)
     })

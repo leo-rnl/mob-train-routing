@@ -1,3 +1,6 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
 parameters:
     level: 6
     paths:
@@ -6,3 +9,5 @@ parameters:
         - vendor
     ignoreErrors:
         - '#generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory#'
+        # TransientToken vs PersonalAccessToken runtime check - necessary for mixed auth
+        - '#Instanceof between Laravel\\Sanctum\\PersonalAccessToken and Laravel\\Sanctum\\PersonalAccessToken will always evaluate to true#'

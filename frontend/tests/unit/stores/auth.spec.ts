@@ -1,55 +1,50 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
-import { authApi } from '@/services/api'
+import { authApi, csrfApi } from '@/services/api'
 import type { AxiosResponse, AxiosError } from 'axios'
-import type { LoginResponse, ApiError } from '@/types/api'
+import type { LoginResponse, UserResponse, ApiError } from '@/types/api'
 
 // Mock the API module
 vi.mock('@/services/api', () => ({
   authApi: {
     login: vi.fn(),
+    logout: vi.fn(),
+    user: vi.fn(),
+  },
+  csrfApi: {
+    getCookie: vi.fn(),
   },
 }))
+
+const mockUser = { id: 1, name: 'Test User', email: 'test@example.com' }
 
 describe('Auth Store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    localStorage.clear()
     vi.clearAllMocks()
   })
 
-  afterEach(() => {
-    localStorage.clear()
-  })
-
   describe('Initial state', () => {
-    it('should initialize with null token when localStorage is empty', () => {
+    it('should initialize with null user', () => {
       const store = useAuthStore()
 
-      expect(store.token).toBeNull()
+      expect(store.user).toBeNull()
       expect(store.isLoading).toBe(false)
       expect(store.error).toBeNull()
-    })
-
-    it('should initialize with token from localStorage', () => {
-      localStorage.setItem('auth_token', 'existing-token')
-
-      const store = useAuthStore()
-
-      expect(store.token).toBe('existing-token')
+      expect(store.isInitialized).toBe(false)
     })
   })
 
   describe('isAuthenticated getter', () => {
-    it('should return true when token exists', () => {
-      localStorage.setItem('auth_token', 'test-token')
+    it('should return true when user exists', () => {
       const store = useAuthStore()
+      store.user = mockUser
 
       expect(store.isAuthenticated).toBe(true)
     })
 
-    it('should return false when token is null', () => {
+    it('should return false when user is null', () => {
       const store = useAuthStore()
 
       expect(store.isAuthenticated).toBe(false)
@@ -57,9 +52,10 @@ describe('Auth Store', () => {
   })
 
   describe('login action', () => {
-    it('should store token and update state on successful login', async () => {
+    it('should get CSRF cookie and store user on successful login', async () => {
+      vi.mocked(csrfApi.getCookie).mockResolvedValue({} as AxiosResponse)
       const mockResponse: AxiosResponse<LoginResponse> = {
-        data: { token: 'new-token-123', expiresAt: null },
+        data: { user: mockUser },
         status: 200,
         statusText: 'OK',
         headers: {},
@@ -71,16 +67,17 @@ describe('Auth Store', () => {
       const result = await store.login('test@example.com', 'password')
 
       expect(result).toBe(true)
-      expect(store.token).toBe('new-token-123')
+      expect(csrfApi.getCookie).toHaveBeenCalled()
+      expect(store.user).toEqual(mockUser)
       expect(store.isAuthenticated).toBe(true)
       expect(store.isLoading).toBe(false)
       expect(store.error).toBeNull()
-      expect(localStorage.getItem('auth_token')).toBe('new-token-123')
     })
 
     it('should call authApi.login with correct parameters', async () => {
+      vi.mocked(csrfApi.getCookie).mockResolvedValue({} as AxiosResponse)
       const mockResponse: AxiosResponse<LoginResponse> = {
-        data: { token: 'token', expiresAt: null },
+        data: { user: mockUser },
         status: 200,
         statusText: 'OK',
         headers: {},
@@ -94,11 +91,11 @@ describe('Auth Store', () => {
       expect(authApi.login).toHaveBeenCalledWith({
         email: 'user@test.com',
         password: 'secret123',
-        device_name: 'frontend',
       })
     })
 
     it('should set isLoading during login process', async () => {
+      vi.mocked(csrfApi.getCookie).mockResolvedValue({} as AxiosResponse)
       let resolveLogin: (value: AxiosResponse<LoginResponse>) => void
       const loginPromise = new Promise<AxiosResponse<LoginResponse>>((resolve) => {
         resolveLogin = resolve
@@ -111,7 +108,7 @@ describe('Auth Store', () => {
       expect(store.isLoading).toBe(true)
 
       resolveLogin!({
-        data: { token: 'token', expiresAt: null },
+        data: { user: mockUser },
         status: 200,
         statusText: 'OK',
         headers: {},
@@ -124,6 +121,7 @@ describe('Auth Store', () => {
     })
 
     it('should set error and return false on failed login', async () => {
+      vi.mocked(csrfApi.getCookie).mockResolvedValue({} as AxiosResponse)
       const mockError: AxiosError<ApiError> = {
         response: {
           data: { message: 'Invalid credentials' },
@@ -143,13 +141,14 @@ describe('Auth Store', () => {
       const result = await store.login('test@example.com', 'wrong-password')
 
       expect(result).toBe(false)
-      expect(store.token).toBeNull()
+      expect(store.user).toBeNull()
       expect(store.isAuthenticated).toBe(false)
       expect(store.error).toBe('Invalid credentials')
       expect(store.isLoading).toBe(false)
     })
 
     it('should use default error message when response has no message', async () => {
+      vi.mocked(csrfApi.getCookie).mockResolvedValue({} as AxiosResponse)
       const mockError: AxiosError = {
         response: undefined,
         isAxiosError: true,
@@ -162,10 +161,11 @@ describe('Auth Store', () => {
       const store = useAuthStore()
       await store.login('test@example.com', 'password')
 
-      expect(store.error).toBe('Invalid credentials')
+      expect(store.error).toBe('Identifiants invalides')
     })
 
     it('should clear previous error on new login attempt', async () => {
+      vi.mocked(csrfApi.getCookie).mockResolvedValue({} as AxiosResponse)
       const mockError: AxiosError<ApiError> = {
         response: {
           data: { message: 'First error' },
@@ -198,7 +198,7 @@ describe('Auth Store', () => {
       expect(store.error).toBeNull()
 
       resolveLogin!({
-        data: { token: 'token', expiresAt: null },
+        data: { user: mockUser },
         status: 200,
         statusText: 'OK',
         headers: {},
@@ -210,25 +210,98 @@ describe('Auth Store', () => {
   })
 
   describe('logout action', () => {
-    it('should clear token and localStorage', () => {
-      localStorage.setItem('auth_token', 'test-token')
+    it('should call API and clear user', async () => {
+      vi.mocked(authApi.logout).mockResolvedValue({} as AxiosResponse)
       const store = useAuthStore()
-      store.token = 'test-token'
+      store.user = mockUser
 
-      store.logout()
+      await store.logout()
 
-      expect(store.token).toBeNull()
+      expect(authApi.logout).toHaveBeenCalled()
+      expect(store.user).toBeNull()
       expect(store.isAuthenticated).toBe(false)
-      expect(localStorage.getItem('auth_token')).toBeNull()
     })
 
-    it('should clear error on logout', () => {
+    it('should clear user even if API call fails', async () => {
+      vi.mocked(authApi.logout).mockRejectedValue(new Error('Network error'))
+      const store = useAuthStore()
+      store.user = mockUser
+
+      await store.logout()
+
+      expect(store.user).toBeNull()
+      expect(store.isAuthenticated).toBe(false)
+    })
+
+    it('should clear error on logout', async () => {
+      vi.mocked(authApi.logout).mockResolvedValue({} as AxiosResponse)
       const store = useAuthStore()
       store.error = 'Some error'
 
-      store.logout()
+      await store.logout()
 
       expect(store.error).toBeNull()
+    })
+  })
+
+  describe('checkAuth action', () => {
+    it('should set user when session is valid', async () => {
+      const mockResponse: AxiosResponse<UserResponse> = {
+        data: { user: mockUser },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as AxiosResponse['config'],
+      }
+      vi.mocked(authApi.user).mockResolvedValue(mockResponse)
+
+      const store = useAuthStore()
+      await store.checkAuth()
+
+      expect(store.user).toEqual(mockUser)
+      expect(store.isAuthenticated).toBe(true)
+      expect(store.isLoading).toBe(false)
+      expect(store.isInitialized).toBe(true)
+    })
+
+    it('should clear user when session is invalid', async () => {
+      vi.mocked(authApi.user).mockRejectedValue(new Error('Unauthorized'))
+
+      const store = useAuthStore()
+      store.user = mockUser
+      await store.checkAuth()
+
+      expect(store.user).toBeNull()
+      expect(store.isAuthenticated).toBe(false)
+      expect(store.isLoading).toBe(false)
+      expect(store.isInitialized).toBe(true)
+    })
+
+    it('should set isLoading during check', async () => {
+      let resolveUser: (value: AxiosResponse<UserResponse>) => void
+      const userPromise = new Promise<AxiosResponse<UserResponse>>((resolve) => {
+        resolveUser = resolve
+      })
+      vi.mocked(authApi.user).mockReturnValue(userPromise)
+
+      const store = useAuthStore()
+      const checkCall = store.checkAuth()
+
+      expect(store.isLoading).toBe(true)
+      expect(store.isInitialized).toBe(false)
+
+      resolveUser!({
+        data: { user: mockUser },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as AxiosResponse['config'],
+      })
+
+      await checkCall
+
+      expect(store.isLoading).toBe(false)
+      expect(store.isInitialized).toBe(true)
     })
   })
 
@@ -240,28 +313,6 @@ describe('Auth Store', () => {
       store.clearError()
 
       expect(store.error).toBeNull()
-    })
-  })
-
-  describe('init action', () => {
-    it('should hydrate token from localStorage', () => {
-      const store = useAuthStore()
-      store.token = null
-
-      localStorage.setItem('auth_token', 'hydrated-token')
-      store.init()
-
-      expect(store.token).toBe('hydrated-token')
-    })
-
-    it('should set token to null if localStorage is empty', () => {
-      localStorage.setItem('auth_token', 'initial-token')
-      const store = useAuthStore()
-
-      localStorage.removeItem('auth_token')
-      store.init()
-
-      expect(store.token).toBeNull()
     })
   })
 })

@@ -3,6 +3,9 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
+// Mock HTMLCanvasElement.getContext to suppress chart.js warnings in jsdom
+HTMLCanvasElement.prototype.getContext = () => null
+
 // Polyfills for browser APIs used by Vuetify but not available in JSDOM
 global.ResizeObserver = class ResizeObserver {
   observe() {}

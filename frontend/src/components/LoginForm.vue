@@ -42,6 +42,8 @@
       variant="tonal"
       class="mb-4"
       closable
+      role="alert"
+      aria-live="polite"
       @click:close="authStore.clearError()"
     >
       {{ authStore.error }}
@@ -64,12 +66,23 @@
       :type="showPassword ? 'text' : 'password'"
       :rules="passwordRules"
       prepend-inner-icon="mdi-lock"
-      :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
       variant="outlined"
       class="mb-4"
       autocomplete="current-password"
-      @click:append-inner="showPassword = !showPassword"
-    />
+    >
+      <template #append-inner>
+        <v-icon
+          :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          role="button"
+          tabindex="0"
+          @click="showPassword = !showPassword"
+          @keydown.enter="showPassword = !showPassword"
+          @keydown.space.prevent="showPassword = !showPassword"
+        >
+          {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+        </v-icon>
+      </template>
+    </v-text-field>
 
     <v-btn
       type="submit"

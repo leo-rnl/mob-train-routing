@@ -49,67 +49,156 @@
 
 <template>
   <v-card
-    :variant="highlight ? 'elevated' : 'outlined'"
-    class="mb-4 route-card"
-    :class="{ 'route-card--highlight': highlight }"
+    class="route-card"
+    :class="{
+      'route-card--highlight': highlight,
+      'route-card--focused': isExpanded,
+    }"
   >
-    <v-card-title
-      class="d-flex align-center justify-space-between flex-wrap ga-2 cursor-pointer"
+    <!-- Clickable header zone -->
+    <div
+      class="route-card__clickable"
+      role="button"
+      tabindex="0"
+      :aria-expanded="isExpanded"
+      :aria-label="`Trajet ${fromStationName} vers ${toStationName}, ${route.distanceKm.toFixed(2)} kilomètres. ${isExpanded ? 'Cliquez pour réduire' : 'Cliquez pour voir les détails'}`"
       @click="toggleExpand"
+      @keydown.enter="toggleExpand"
+      @keydown.space.prevent="toggleExpand"
     >
-      <div class="d-flex align-center">
-        <v-icon class="mr-2" color="primary">mdi-train</v-icon>
-        <span>{{ fromStationName }}</span>
-        <v-icon class="mx-2">mdi-arrow-right</v-icon>
-        <span>{{ toStationName }}</span>
+      <!-- Header: Stations + Distance -->
+      <div class="route-card__header">
+        <div class="route-card__stations">
+          <span class="route-card__station">{{ fromStationName }}</span>
+          <v-icon size="small" class="route-card__arrow" aria-hidden="true">mdi-arrow-right</v-icon>
+          <span class="route-card__station">{{ toStationName }}</span>
+        </div>
+        <div class="route-card__distance">{{ route.distanceKm.toFixed(2) }} km</div>
       </div>
-      <div class="d-flex align-center ga-2">
-        <v-chip size="small" color="primary" variant="tonal">
-          {{ route.distanceKm.toFixed(2) }} km
-        </v-chip>
-        <v-icon>
-          {{ isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-        </v-icon>
+
+      <!-- Metadata: Code + Date + Stops -->
+      <div class="route-card__meta">
+        <span class="route-card__meta-item">
+          <v-icon size="14" class="mr-1" aria-hidden="true">mdi-tag-outline</v-icon>
+          {{ route.analyticCode }}
+        </span>
+        <span class="route-card__meta-item">
+          <v-icon size="14" class="mr-1" aria-hidden="true">mdi-map-marker-path</v-icon>
+          {{ route.path.length <= 2 ? 'Direct' : `${route.path.length - 2} arrêt(s)` }}
+        </span>
+        <span class="route-card__meta-item">
+          <v-icon size="14" class="mr-1" aria-hidden="true">mdi-clock-outline</v-icon>
+          {{ formattedDate }}
+        </span>
       </div>
-    </v-card-title>
+    </div>
 
-    <v-card-subtitle class="d-flex align-center ga-4 flex-wrap">
-      <span>
-        <v-icon size="small" class="mr-1">mdi-tag</v-icon>
-        {{ route.analyticCode }}
-      </span>
-      <span>
-        <v-icon size="small" class="mr-1">mdi-calendar</v-icon>
-        {{ formattedDate }}
-      </span>
-    </v-card-subtitle>
-
+    <!-- Expanded content (not clickable for toggle) -->
     <v-expand-transition>
-      <v-card-text v-show="isExpanded">
+      <div v-show="isExpanded" class="route-card__details">
         <PathTimeline :path="route.path" :initial-expanded="highlight" />
-      </v-card-text>
-    </v-expand-transition>
 
-    <v-card-actions v-if="!highlight">
-      <v-spacer />
-      <v-btn variant="text" color="primary" prepend-icon="mdi-pencil" @click="handleUse">
-        Utiliser
-      </v-btn>
-    </v-card-actions>
+        <div v-if="!highlight" class="route-card__actions">
+          <v-btn variant="text" color="primary" size="small" @click="handleUse">
+            Utiliser ce trajet
+          </v-btn>
+        </div>
+      </div>
+    </v-expand-transition>
   </v-card>
 </template>
 
 <style scoped>
-  .route-card .cursor-pointer {
+  .route-card {
+    margin-bottom: 12px;
+    padding: 16px 20px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border: 2px solid transparent;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .route-card__clickable {
     cursor: pointer;
   }
 
+  .route-card__clickable:hover {
+    opacity: 0.9;
+  }
+
+  .route-card__clickable:focus-visible {
+    outline: 2px solid #0c0d19;
+    outline-offset: 2px;
+  }
+
+  .route-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .route-card--focused {
+    border-color: #000;
+  }
+
   .route-card--highlight {
-    border: 2px solid rgb(var(--v-theme-primary));
-    background: linear-gradient(
-      135deg,
-      rgba(var(--v-theme-primary), 0.04) 0%,
-      rgba(var(--v-theme-primary), 0.08) 100%
-    );
+    border-color: rgb(var(--v-theme-primary));
+    background: rgba(var(--v-theme-primary), 0.02);
+  }
+
+  .route-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .route-card__stations {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .route-card__station {
+    color: #2f3137;
+  }
+
+  .route-card__arrow {
+    color: #737885;
+  }
+
+  .route-card__distance {
+    font-weight: 600;
+    font-size: 15px;
+    color: rgb(var(--v-theme-primary));
+    white-space: nowrap;
+  }
+
+  .route-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: #737885;
+  }
+
+  .route-card__meta-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .route-card__details {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+  }
+
+  .route-card__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
   }
 </style>

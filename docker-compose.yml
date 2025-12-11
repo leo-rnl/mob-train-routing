@@ -29,7 +29,7 @@ services:
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
-      APP_KEY: base64:placeholder_key_will_be_generated
+      APP_KEY: base64:dGhpc2lzYXRlc3RrZXlmb3JkZXZlbG9wbWVudG9ubHk=
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432

@@ -2,7 +2,10 @@
   import { ref, computed, onMounted } from 'vue'
   import RouteForm from '@/components/RouteForm.vue'
   import RouteCard from '@/components/RouteCard.vue'
+  import EmptyState from '@/components/EmptyState.vue'
+  import ErrorAlert from '@/components/ErrorAlert.vue'
   import { routesApi } from '@/services/api'
+  import { getApiErrorMessage } from '@/utils/errorUtils'
   import type { Route, PaginationMeta } from '@/types/api'
 
   // Routes state
@@ -48,8 +51,7 @@
       meta.value = data.meta
       currentPage.value = data.meta.current_page
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } }
-      error.value = err.response?.data?.message || 'Erreur lors du chargement des trajets'
+      error.value = getApiErrorMessage(e, 'Erreur lors du chargement des trajets')
     } finally {
       isLoading.value = false
     }
@@ -90,20 +92,24 @@
 </script>
 
 <template>
-  <v-container>
-    <!-- Form section - wider -->
-    <v-row justify="center">
-      <v-col cols="12" lg="10">
-        <RouteForm :prefill="prefillData" class="mb-6" @route-calculated="handleRouteCalculated" />
-      </v-col>
-    </v-row>
+  <div class="home-layout">
+    <!-- Left panel: Form -->
+    <main class="home-layout__main">
+      <div class="home-layout__main-content">
+        <h1 class="text-h5 font-weight-bold mb-6">Calculer un trajet</h1>
+        <RouteForm :prefill="prefillData" @route-calculated="handleRouteCalculated" />
+      </div>
+    </main>
 
-    <!-- Routes list section - narrower -->
-    <v-row justify="center">
-      <v-col cols="12" md="10" lg="8">
-        <v-alert v-if="error" type="error" variant="tonal" closable @click:close="error = null">
-          {{ error }}
-        </v-alert>
+    <!-- Right aside: Route cards -->
+    <aside class="home-layout__aside">
+      <div class="home-layout__aside-content">
+        <h2 class="text-h6 font-weight-bold mb-4">
+          Historique des trajets
+          <span v-if="meta?.total" class="routes-count">({{ meta.total }})</span>
+        </h2>
+
+        <ErrorAlert v-model="error" class="mb-4" />
 
         <!-- Last calculated route (highlighted) -->
         <RouteCard v-if="lastCalculated" :route="lastCalculated" highlight />
@@ -121,21 +127,83 @@
 
         <!-- Load more button -->
         <div v-if="hasMore && !isLoading" class="text-center mt-4">
-          <v-btn variant="outlined" color="primary" @click="loadMore"> Charger plus </v-btn>
+          <v-btn
+            variant="outlined"
+            color="primary"
+            aria-label="Charger plus de trajets"
+            @click="loadMore"
+          >
+            Charger plus
+          </v-btn>
         </div>
 
-        <!-- Empty state (only if no routes and no lastCalculated) -->
-        <div
+        <!-- Empty state -->
+        <EmptyState
           v-if="routes.length === 0 && !lastCalculated && !isLoading"
-          class="text-center pa-8 mt-4"
-        >
-          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-train-variant</v-icon>
-          <div class="text-h6 text-medium-emphasis">Calculez votre premier trajet</div>
-          <div class="text-body-2 text-medium-emphasis">
-            Sélectionnez les stations de départ et d'arrivée ci-dessus.
-          </div>
-        </div>
-      </v-col>
-    </v-row>
-  </v-container>
+          icon="mdi-train-variant"
+          title="Aucun trajet"
+          subtitle="Calculez votre premier trajet pour le voir apparaître ici."
+        />
+      </div>
+    </aside>
+  </div>
 </template>
+
+<style scoped>
+  .home-layout {
+    display: flex;
+    min-height: calc(100vh - 64px); /* Subtract app bar height */
+  }
+
+  /* Left panel - Form */
+  .home-layout__main {
+    flex: 0 0 50%;
+    max-width: 600px;
+    min-width: 400px;
+    background-color: rgb(var(--v-theme-surface));
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .home-layout__main-content {
+    padding: 30px;
+    position: sticky;
+    top: 64px; /* App bar height */
+  }
+
+  /* Right aside - Route cards */
+  .home-layout__aside {
+    flex: 1;
+    background-color: #f5f5f5;
+    overflow-y: auto;
+  }
+
+  .home-layout__aside-content {
+    padding: 30px;
+  }
+
+  .routes-count {
+    font-weight: 400;
+    color: #737885;
+  }
+
+  /* Responsive: stack on mobile */
+  @media (max-width: 960px) {
+    .home-layout {
+      flex-direction: column;
+    }
+
+    .home-layout__main {
+      flex: none;
+      max-width: 100%;
+      min-width: 100%;
+    }
+
+    .home-layout__main-content {
+      padding: 20px;
+    }
+
+    .home-layout__aside-content {
+      padding: 20px;
+    }
+  }
+</style>

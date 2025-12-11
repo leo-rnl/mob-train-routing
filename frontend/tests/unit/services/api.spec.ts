@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import axios from 'axios'
-import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
+import type { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
 
 // Mock axios before importing api module
 vi.mock('axios', () => {
@@ -16,19 +16,18 @@ vi.mock('axios', () => {
   return {
     default: {
       create: vi.fn(() => mockAxiosInstance),
+      get: vi.fn(),
     },
   }
 })
 
 describe('API Service', () => {
   let mockAxiosInstance: AxiosInstance
-  let requestInterceptor: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig
   let responseSuccessInterceptor: (response: AxiosResponse) => AxiosResponse
   let responseErrorInterceptor: (error: AxiosError) => Promise<never>
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    localStorage.clear()
 
     // Reset modules to get fresh import
     vi.resetModules()
@@ -39,16 +38,14 @@ describe('API Service', () => {
     mockAxiosInstance = (axios.create as ReturnType<typeof vi.fn>).mock.results[0].value
 
     // Capture interceptors
-    const requestUse = mockAxiosInstance.interceptors.request.use as ReturnType<typeof vi.fn>
     const responseUse = mockAxiosInstance.interceptors.response.use as ReturnType<typeof vi.fn>
 
-    requestInterceptor = requestUse.mock.calls[0][0]
     responseSuccessInterceptor = responseUse.mock.calls[0][0]
     responseErrorInterceptor = responseUse.mock.calls[0][1]
   })
 
   afterEach(() => {
-    localStorage.clear()
+    vi.restoreAllMocks()
   })
 
   describe('Axios instance configuration', () => {
@@ -59,31 +56,9 @@ describe('API Service', () => {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
+        withCredentials: true,
+        withXSRFToken: true,
       })
-    })
-  })
-
-  describe('Request interceptor', () => {
-    it('should add Authorization header when token exists', () => {
-      localStorage.setItem('auth_token', 'test-token-123')
-
-      const config = {
-        headers: {},
-      } as InternalAxiosRequestConfig
-
-      const result = requestInterceptor(config)
-
-      expect(result.headers.Authorization).toBe('Bearer test-token-123')
-    })
-
-    it('should not add Authorization header when token is absent', () => {
-      const config = {
-        headers: {},
-      } as InternalAxiosRequestConfig
-
-      const result = requestInterceptor(config)
-
-      expect(result.headers.Authorization).toBeUndefined()
     })
   })
 
@@ -96,9 +71,7 @@ describe('API Service', () => {
       expect(result).toBe(response)
     })
 
-    it('should clear token and redirect on 401 error', async () => {
-      localStorage.setItem('auth_token', 'test-token')
-
+    it('should redirect on 401 error', async () => {
       // Mock window.location
       const originalLocation = window.location
       Object.defineProperty(window, 'location', {
@@ -112,7 +85,6 @@ describe('API Service', () => {
 
       await expect(responseErrorInterceptor(error)).rejects.toBe(error)
 
-      expect(localStorage.getItem('auth_token')).toBeNull()
       expect(window.location.href).toBe('/login')
 
       // Restore
@@ -122,9 +94,28 @@ describe('API Service', () => {
       })
     })
 
-    it('should not redirect if already on login page', async () => {
-      localStorage.setItem('auth_token', 'test-token')
+    it('should redirect on 419 CSRF token mismatch', async () => {
+      const originalLocation = window.location
+      Object.defineProperty(window, 'location', {
+        value: { pathname: '/home', href: '' },
+        writable: true,
+      })
 
+      const error = {
+        response: { status: 419 },
+      } as AxiosError
+
+      await expect(responseErrorInterceptor(error)).rejects.toBe(error)
+
+      expect(window.location.href).toBe('/login')
+
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        writable: true,
+      })
+    })
+
+    it('should not redirect if already on login page', async () => {
       const originalLocation = window.location
       Object.defineProperty(window, 'location', {
         value: { pathname: '/login', href: '' },
@@ -137,7 +128,6 @@ describe('API Service', () => {
 
       await expect(responseErrorInterceptor(error)).rejects.toBe(error)
 
-      expect(localStorage.getItem('auth_token')).toBeNull()
       expect(window.location.href).toBe('') // Should not change
 
       Object.defineProperty(window, 'location', {
@@ -146,7 +136,7 @@ describe('API Service', () => {
       })
     })
 
-    it('should pass through non-401 errors', async () => {
+    it('should pass through non-401/419 errors', async () => {
       const error = {
         response: { status: 500 },
       } as AxiosError
@@ -156,9 +146,16 @@ describe('API Service', () => {
   })
 
   describe('API methods', () => {
-    it('should export authApi with login method', async () => {
+    it('should export authApi with login, logout, and user methods', async () => {
       const { authApi } = await import('@/services/api')
       expect(authApi.login).toBeDefined()
+      expect(authApi.logout).toBeDefined()
+      expect(authApi.user).toBeDefined()
+    })
+
+    it('should export csrfApi with getCookie method', async () => {
+      const { csrfApi } = await import('@/services/api')
+      expect(csrfApi.getCookie).toBeDefined()
     })
 
     it('should export stationsApi with list method', async () => {
@@ -166,9 +163,10 @@ describe('API Service', () => {
       expect(stationsApi.list).toBeDefined()
     })
 
-    it('should export routesApi with create method', async () => {
+    it('should export routesApi with create and list methods', async () => {
       const { routesApi } = await import('@/services/api')
       expect(routesApi.create).toBeDefined()
+      expect(routesApi.list).toBeDefined()
     })
 
     it('should export statsApi with distances method', async () => {

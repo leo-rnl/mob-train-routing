@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read User|null $user
  * @property-read Station|null $fromStation
  * @property-read Station|null $toStation
+ *
+ * @method static Route create(array<string, mixed> $attributes = [])
  */
 class Route extends Model
 {

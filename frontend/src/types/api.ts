@@ -4,15 +4,23 @@
 
 // === Auth ===
 
+export interface User {
+  id: number
+  name: string
+  email: string
+}
+
 export interface LoginRequest {
   email: string
   password: string
-  device_name: string
 }
 
 export interface LoginResponse {
-  token: string
-  expiresAt: string | null
+  user: User
+}
+
+export interface UserResponse {
+  user: User
 }
 
 // === Stations ===
