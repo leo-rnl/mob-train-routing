@@ -23,8 +23,8 @@
           <span class="login-layout__title-main">Train Routing</span>
         </div>
         <p class="login-layout__tagline">
-          Des Alpes au Léman,<br>
-          optimisez vos trajets ferroviaires<br>
+          Des Alpes au Léman,<br />
+          optimisez vos trajets ferroviaires<br />
           sur le réseau Montreux-Oberland Bernois.
         </p>
       </div>
