@@ -406,7 +406,7 @@ jobs:
           rules_file_name: '.zap/rules.tsv'
           fail_action: false
           allow_issue_writing: false
-          cmd_options: '-config connection.dnsTtlSuccessfulQueries=-1 -config api.disablekey=true'
+          cmd_options: '-z "-config connection.dnsTtlSuccessfulQueries=-1 -config api.disablekey=true"'
         continue-on-error: true
 
       - name: Stop application
