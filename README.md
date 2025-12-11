@@ -11,12 +11,14 @@ Application de calcul d'itinéraires ferroviaires pour le réseau MOB (Montreux 
 ```bash
 git clone https://github.com/leo-rnl/mob-train-routing.git
 cd mob-train-routing
-docker compose up -d
+make dev
 ```
 
 L'application est accessible sur :
 - **Frontend** : http://localhost:3000
 - **API** : http://localhost:8000
+
+> Pour le déploiement production avec HTTPS : `make prod` (voir [Déploiement](#déploiement)).
 
 **Compte de démonstration** :
 ```
@@ -204,8 +206,19 @@ Dans le secteur du transport, l'accessibilité numérique est un enjeu courant. 
 
 - Docker Desktop
 - Docker Compose v2+
+- Make (préinstallé sur macOS/Linux)
 
-### Commandes
+### Commandes Make
+
+| Commande | Description |
+|----------|-------------|
+| `make dev` | Démarrer l'environnement de développement |
+| `make prod` | Démarrer la production avec HTTPS |
+| `make down` | Arrêter tous les containers |
+| `make logs` | Voir les logs (filtrer avec `SERVICE=backend`) |
+| `make clean` | Supprimer containers et volumes |
+
+### Commandes qualité
 
 **Backend** :
 ```bash
@@ -227,13 +240,42 @@ npm run test            # Vitest
 
 ## Déploiement
 
-### Docker Compose
+### Production avec HTTPS (Traefik)
+
+Le déploiement production utilise **Traefik** comme reverse proxy avec terminaison TLS.
 
 ```bash
-cp .env.example .env
-# Éditer .env avec les valeurs de production
-docker compose -f docker-compose.prod.yml up -d
+make prod
 ```
+
+Cette commande :
+1. Génère les certificats self-signed (si absents)
+2. Crée le fichier `.env` depuis `.env.example` (si absent)
+3. Démarre le stack production
+
+L'application est accessible sur :
+- **Frontend** : https://localhost
+- **API** : https://localhost/api/v1
+- **Dashboard Traefik** : http://localhost:8080 (désactiver en production réelle)
+
+> **Note** : Le navigateur affichera un avertissement pour le certificat self-signed. Acceptez-le ou ajoutez le certificat au truststore système.
+
+<details>
+<summary>Ajouter le certificat au truststore (optionnel)</summary>
+
+**macOS** :
+```bash
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain \
+  traefik/certs/localhost.crt
+```
+
+**Linux (Ubuntu/Debian)** :
+```bash
+sudo cp traefik/certs/localhost.crt /usr/local/share/ca-certificates/mob-localhost.crt
+sudo update-ca-certificates
+```
+</details>
 
 ### Images GHCR
 
@@ -246,9 +288,9 @@ docker pull ghcr.io/leo-rnl/mob-train-routing-frontend:latest
 
 | Variable | Description |
 |----------|-------------|
-| `APP_KEY` | Clé Laravel |
-| `DB_PASSWORD` | Mot de passe PostgreSQL |
-| `APP_URL` | URL publique du backend |
+| `APP_KEY` | Clé Laravel (générer avec `php artisan key:generate --show`) |
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
+| `APP_URL` | URL publique (`https://localhost` par défaut) |
 
 ---
 
