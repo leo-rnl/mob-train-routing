@@ -1,0 +1,50 @@
+# =============================================================================
+# Traefik Dynamic Configuration - Services and Routers
+# File-based configuration (fallback when Docker provider not available)
+# =============================================================================
+
+http:
+  # ---------------------------------------------------------------------------
+  # Routers
+  # ---------------------------------------------------------------------------
+  routers:
+    # Backend API router (higher priority)
+    backend-api:
+      rule: "Host(`localhost`) && PathPrefix(`/api`)"
+      entryPoints:
+        - websecure
+      service: backend
+      tls: {}
+      priority: 100
+
+    # Backend Sanctum router
+    backend-sanctum:
+      rule: "Host(`localhost`) && PathPrefix(`/sanctum`)"
+      entryPoints:
+        - websecure
+      service: backend
+      tls: {}
+      priority: 100
+
+    # Frontend router (catch-all)
+    frontend:
+      rule: "Host(`localhost`)"
+      entryPoints:
+        - websecure
+      service: frontend
+      tls: {}
+      priority: 1
+
+  # ---------------------------------------------------------------------------
+  # Services
+  # ---------------------------------------------------------------------------
+  services:
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://backend:80"
+
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:80"

@@ -36,7 +36,7 @@ describe('PathTimeline', () => {
     it('shows expand button with hidden count', () => {
       const wrapper = mountComponent(['MX', 'CGE', 'VUAR', 'ZW'])
 
-      expect(wrapper.text()).toContain('Afficher 2 station(s) intermédiaire(s)')
+      expect(wrapper.text()).toContain('+ 2 arrêt(s)')
     })
   })
 
@@ -76,7 +76,7 @@ describe('PathTimeline', () => {
       await wrapper.find('button').trigger('click')
 
       expect(wrapper.text()).not.toContain('Chamby-Gare')
-      expect(wrapper.text()).toContain('Afficher 2 station(s) intermédiaire(s)')
+      expect(wrapper.text()).toContain('+ 2 arrêt(s)')
     })
   })
 

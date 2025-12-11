@@ -26,6 +26,9 @@ RUN composer dump-autoload --optimize --no-dev \
 # =============================================================================
 FROM php:8.4-fpm-alpine AS production
 
+# Update system packages to fix known vulnerabilities
+RUN apk upgrade --no-cache
+
 # Install system dependencies and PHP extensions
 RUN apk add --no-cache \
     nginx \

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { stationsApi } from '@/services/api'
-import type { AxiosError } from 'axios'
-import type { ApiError, Station } from '@/types/api'
+import { getApiErrorMessage } from '@/utils/errorUtils'
+import type { Station } from '@/types/api'
 
 const STATIONS_CACHE_KEY = 'stations_cache'
 
@@ -110,8 +110,7 @@ export const useStationsStore = defineStore('stations', {
         this.isLoaded = true
         this.saveToCache()
       } catch (e) {
-        const error = e as AxiosError<ApiError>
-        this.error = error.response?.data?.message || 'Failed to load stations'
+        this.error = getApiErrorMessage(e, 'Erreur lors du chargement des gares')
       } finally {
         this.isLoading = false
       }

@@ -1,51 +1,82 @@
 <script setup lang="ts">
   import { RouterView, useRouter } from 'vue-router'
-  import { onMounted, watch } from 'vue'
+  import { watch } from 'vue'
   import { useAuthStore } from '@/stores/auth'
   import { useStationsStore } from '@/stores/stations'
+  import AppNavbar from '@/components/AppNavbar.vue'
 
   const router = useRouter()
   const authStore = useAuthStore()
   const stationsStore = useStationsStore()
 
-  async function initStations() {
-    if (authStore.isAuthenticated && !stationsStore.isLoaded) {
-      await stationsStore.init()
-    }
-  }
-
-  onMounted(initStations)
-
+  // Load stations when authenticated
   watch(
     () => authStore.isAuthenticated,
     (isAuth) => {
-      if (isAuth) initStations()
-    }
+      if (isAuth && !stationsStore.isLoaded) {
+        stationsStore.init()
+      }
+    },
+    { immediate: true }
   )
 
-  function handleLogout() {
-    authStore.logout()
+  async function handleLogout() {
+    await authStore.logout()
     router.push('/login')
   }
 </script>
 
 <template>
   <v-app>
-    <v-app-bar v-if="authStore.isAuthenticated" color="primary" density="compact">
-      <v-toolbar-title class="ml-2">MOB Train Routing</v-toolbar-title>
+    <!-- Show loading while checking auth -->
+    <v-overlay
+      v-if="!authStore.isInitialized"
+      :model-value="true"
+      class="align-center justify-center"
+      aria-label="Chargement de l'application"
+    >
+      <v-progress-circular indeterminate size="64" color="primary" aria-hidden="true" />
+    </v-overlay>
 
-      <v-spacer />
+    <template v-else>
+      <AppNavbar v-if="authStore.isAuthenticated" @logout="handleLogout" />
 
-      <v-btn to="/" variant="text">Accueil</v-btn>
-      <v-btn to="/stats" variant="text">Statistiques</v-btn>
-
-      <v-spacer />
-
-      <v-btn variant="outlined" size="small" @click="handleLogout">Déconnexion</v-btn>
-    </v-app-bar>
-
-    <v-main>
-      <RouterView />
-    </v-main>
+      <v-main>
+        <RouterView />
+      </v-main>
+    </template>
   </v-app>
 </template>
+
+<style>
+  /* Global font family */
+  html,
+  body,
+  .v-application {
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  /* Typography adjustments */
+  .v-application {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Disable uppercase on all buttons */
+  .v-btn {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Global focus visible style for accessibility */
+  :focus-visible {
+    outline: 2px solid #0c0d19;
+    outline-offset: 2px;
+  }
+
+  /* Override for Vuetify buttons which have their own focus style */
+  .v-btn:focus-visible {
+    outline: 2px solid #0c0d19;
+    outline-offset: 2px;
+  }
+</style>

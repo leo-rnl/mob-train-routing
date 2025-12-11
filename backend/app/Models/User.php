@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -17,6 +18,9 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $remember_token
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|static where(string $column, mixed $value)
+ * @method static static|null first()
  */
 class User extends Authenticatable
 {
@@ -57,5 +61,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the routes for the user.
+     *
+     * @return HasMany<Route, $this>
+     */
+    public function routes(): HasMany
+    {
+        return $this->hasMany(Route::class);
     }
 }

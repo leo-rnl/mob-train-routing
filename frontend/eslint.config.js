@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint'
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'public/libs/**'],
   },
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
@@ -20,6 +20,12 @@ export default [
       'vue/multi-word-component-names': 'off',
       'vue/singleline-html-element-content-newline': 'off',
       'vue/max-attributes-per-line': 'off',
+      'vue/html-self-closing': [
+        'warn',
+        {
+          html: { void: 'any' },
+        },
+      ],
     },
   },
 ]

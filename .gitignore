@@ -1,7 +1,16 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Claude Code - local only files
 .claude/current_context.md
 .claude/future_features.md
 .claude/extensions.md
+.claude/Brief_defi_fullstack.md
+
+# Traefik - self-signed certificates (generated locally)
+traefik/certs/
 
 # IDE
 .idea/

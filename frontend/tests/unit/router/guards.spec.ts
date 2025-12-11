@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -8,8 +8,15 @@ import { defineComponent } from 'vue'
 vi.mock('@/services/api', () => ({
   authApi: {
     login: vi.fn(),
+    logout: vi.fn(),
+    user: vi.fn(),
+  },
+  csrfApi: {
+    getCookie: vi.fn(),
   },
 }))
+
+const mockUser = { id: 1, name: 'Test User', email: 'test@example.com' }
 
 // Simple test components (eslint-disable for test mocks)
 // eslint-disable-next-line vue/one-component-per-file
@@ -43,9 +50,14 @@ function createTestRouter() {
     ],
   })
 
-  // Add the navigation guard
-  router.beforeEach((to, _from, next) => {
+  // Add the navigation guard (matching the actual implementation)
+  router.beforeEach(async (to, _from, next) => {
     const authStore = useAuthStore()
+
+    // Wait for auth to be initialized before making routing decisions
+    if (!authStore.isInitialized) {
+      await authStore.checkAuth()
+    }
 
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
       next({
@@ -69,11 +81,10 @@ function createTestRouter() {
 describe('Router Guards', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    localStorage.clear()
-  })
-
-  afterEach(() => {
-    localStorage.clear()
+    // Mark auth as initialized to test guard logic directly
+    // (checkAuth integration is tested separately)
+    const authStore = useAuthStore()
+    authStore.$patch({ isInitialized: true })
   })
 
   describe('Protected routes (requiresAuth)', () => {
@@ -94,7 +105,9 @@ describe('Router Guards', () => {
     })
 
     it('should allow access when authenticated', async () => {
-      localStorage.setItem('auth_token', 'valid-token')
+      const authStore = useAuthStore()
+      authStore.user = mockUser
+
       const router = createTestRouter()
       await router.push('/')
 
@@ -111,7 +124,9 @@ describe('Router Guards', () => {
     })
 
     it('should redirect to home when authenticated', async () => {
-      localStorage.setItem('auth_token', 'valid-token')
+      const authStore = useAuthStore()
+      authStore.user = mockUser
+
       const router = createTestRouter()
       await router.push('/login')
 
@@ -128,7 +143,9 @@ describe('Router Guards', () => {
     })
 
     it('should allow access when authenticated', async () => {
-      localStorage.setItem('auth_token', 'valid-token')
+      const authStore = useAuthStore()
+      authStore.user = mockUser
+
       const router = createTestRouter()
       await router.push('/public')
 
@@ -138,14 +155,15 @@ describe('Router Guards', () => {
 
   describe('Navigation between routes', () => {
     it('should allow navigation from login to home after login', async () => {
+      const authStore = useAuthStore()
+
       const router = createTestRouter()
       await router.push('/login')
 
       expect(router.currentRoute.value.name).toBe('login')
 
       // Simulate login
-      localStorage.setItem('auth_token', 'new-token')
-      useAuthStore().token = 'new-token'
+      authStore.user = mockUser
 
       await router.push('/')
 
@@ -153,15 +171,16 @@ describe('Router Guards', () => {
     })
 
     it('should redirect from protected route to login after logout', async () => {
-      localStorage.setItem('auth_token', 'valid-token')
-      const router = createTestRouter()
       const authStore = useAuthStore()
+      authStore.user = mockUser
+
+      const router = createTestRouter()
 
       await router.push('/')
       expect(router.currentRoute.value.name).toBe('home')
 
       // Simulate logout
-      authStore.logout()
+      authStore.user = null
 
       // Navigate to public route first, then try protected route
       await router.push('/public')

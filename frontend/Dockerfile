@@ -26,6 +26,9 @@ RUN npm run build
 # =============================================================================
 FROM nginx:alpine AS production
 
+# Update system packages to fix known vulnerabilities (libpng, busybox)
+RUN apk upgrade --no-cache
+
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 

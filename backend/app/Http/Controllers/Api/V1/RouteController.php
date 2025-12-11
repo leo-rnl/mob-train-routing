@@ -22,9 +22,12 @@ class RouteController extends Controller
     {
         $perPage = min((int) $request->query('per_page', '10'), 100);
 
-        $routes = Route::query()
-            ->where('user_id', $request->user()?->id)
-            ->orderBy('created_at', 'desc')
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $routes = $user->routes()
+            ->with(['fromStation', 'toStation'])
+            ->latest()
             ->paginate($perPage);
 
         return RouteResource::collection($routes);
@@ -44,21 +47,21 @@ class RouteController extends Controller
 
         if ($result === null) {
             return response()->json([
-                'message' => 'No path exists between the specified stations.',
+                'message' => 'Aucun chemin n\'existe entre les stations spécifiées.',
                 'errors' => [
-                    'route' => ['No path exists between the specified stations.'],
+                    'route' => ['Aucun chemin n\'existe entre les stations spécifiées.'],
                 ],
             ], 422);
         }
 
-        $route = new Route();
-        $route->user_id = $request->user()?->id;
-        $route->from_station_id = $from;
-        $route->to_station_id = $to;
-        $route->analytic_code = $analyticCode;
-        $route->distance_km = $result['distance'];
-        $route->path = $result['path'];
-        $route->save();
+        $route = Route::create([
+            'user_id' => $request->user()?->id,
+            'from_station_id' => $from,
+            'to_station_id' => $to,
+            'analytic_code' => $analyticCode,
+            'distance_km' => $result['distance'],
+            'path' => $result['path'],
+        ]);
 
         return (new RouteResource($route))
             ->response()

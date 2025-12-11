@@ -25,6 +25,7 @@ export default defineConfig({
         'src/views/**',
         'src/components/**',
         'src/types/**',
+        'src/three/**',
       ],
     },
   },

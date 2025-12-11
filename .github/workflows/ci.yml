@@ -360,12 +360,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Generate self-signed certificates
+        run: |
+          mkdir -p traefik/certs
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout traefik/certs/localhost.key \
+            -out traefik/certs/localhost.crt \
+            -subj "/C=CH/ST=Vaud/L=Montreux/O=MOB/CN=localhost" \
+            -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+
       - name: Create .env file
         # Note: valeurs en dur acceptables car environnement CI éphémère et isolé
         run: |
           echo "POSTGRES_PASSWORD=ci_secret" > .env
           echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
           echo "AUTO_MIGRATE=true" >> .env
+          echo "APP_URL=https://localhost" >> .env
 
       - name: Start application stack
         run: |
@@ -375,27 +385,28 @@ jobs:
           docker compose -f docker-compose.prod.yml ps
           docker compose -f docker-compose.prod.yml logs backend --tail=50
 
-      - name: Check backend health
+      - name: Check application health
         run: |
           for i in 1 2 3 4 5; do
-            if curl -sf http://localhost:8000/health; then
-              echo "Backend is healthy"
+            if curl -sf -k https://localhost/health; then
+              echo "Application is healthy"
               exit 0
             fi
             echo "Attempt $i failed, waiting..."
             sleep 10
           done
-          echo "Backend health check failed after 5 attempts"
-          docker compose -f docker-compose.prod.yml logs backend
+          echo "Health check failed after 5 attempts"
+          docker compose -f docker-compose.prod.yml logs
           exit 1
 
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.14.0
         with:
-          target: 'http://localhost:8000'
+          target: 'https://localhost'
           rules_file_name: '.zap/rules.tsv'
           fail_action: false
           allow_issue_writing: false
+          cmd_options: '-z "-config connection.dnsTtlSuccessfulQueries=-1 -config api.disablekey=true"'
         continue-on-error: true
 
       - name: Stop application
