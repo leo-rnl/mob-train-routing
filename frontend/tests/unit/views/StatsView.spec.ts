@@ -39,6 +39,7 @@ describe('StatsView', () => {
     return mount(StatsView, {
       global: {
         stubs: {
+          StatsChart: { template: '<div class="stats-chart-stub" />' },
           'v-data-table': {
             template: `
               <div class="v-data-table-stub">
