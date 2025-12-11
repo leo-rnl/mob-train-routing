@@ -1,5 +1,9 @@
 # CLAUDE.md - Train Routing & Analytics
 
+> **Note** : Ce fichier a servi de contexte de travail pour Claude Code tout au long du projet. Il documente les spécifications initiales, le plan de développement suivi, et les règles de cadrage de l'IA. Pour la documentation utilisateur, voir le [README.md](README.md).
+
+---
+
 ## Contexte projet
 
 Défi technique pour MOB (Montreux Oberland Bernois) - entreprise de gestion du trafic ferroviaire suisse.
@@ -31,7 +35,7 @@ L'expertise humaine reste centrale :
 
 ### Reproductibilité on-premise
 
-Le workflow adopté est **entièrement reproductible en environnement local et air-gapped** via :
+Le workflow adopté est **reproductible en environnement local** via :
 ```
 Claude Code + Claude Code Router → LLM local (Ollama, LM Studio, vLLM...)
 ```
@@ -41,13 +45,7 @@ Cette configuration permet :
 - **Compliance** : compatible avec les exigences réglementaires strictes (données sensibles, secteur bancaire, santé, défense)
 - **Souveraineté** : modèles hébergés on-premise ou cloud privé
 
-Modèles locaux compatibles testés :
-- Llama 3.1 70B / 405B
-- Mixtral 8x22B
-- DeepSeek Coder 33B
-- Qwen 2.5 72B
-
-> Cette adaptabilité démontre que l'expertise développée avec les outils IA modernes est déployable dans des contextes à forte contrainte de confidentialité.
+Ce workflow n'est donc pas limité aux environnements cloud et reste applicable dans des contextes à forte contrainte de confidentialité.
 
 ---
 
@@ -55,7 +53,7 @@ Modèles locaux compatibles testés :
 
 Les règles de développement (conventions de commit, stratégie de branches, checklist avant commit, seuils de coverage) sont définies dans :
 
-📄 **[.claude/workflow.md](.claude/workflow.md)**
+**[.claude/workflow.md](.claude/workflow.md)**
 
 Ce document est indépendant du plan de développement et s'applique à toutes les phases.
 
@@ -65,7 +63,7 @@ Ce document est indépendant du plan de développement et s'applique à toutes l
 
 ### Backend
 - PHP 8.4 (obligatoire)
-- Laravel 11
+- Laravel 12
 - Laravel Sanctum (authentification API)
 - PostgreSQL 16
 - PHPUnit avec couverture ≥ 80%
@@ -112,7 +110,7 @@ Usage : `Authorization: Bearer 1|abc123...`
 
 Liste des stations pour l'autocomplétion frontend.
 
-> ⚠️ **Extension** : Endpoint ajouté car nécessaire à l'UX, absent de la spec OpenAPI initiale.
+> **Extension** : Endpoint ajouté car nécessaire à l'UX, absent de la spec OpenAPI initiale.
 
 **Query params optionnels:**
 - `search` (string): Filtre sur shortName ou longName (LIKE)
@@ -128,6 +126,35 @@ Liste des stations pour l'autocomplétion frontend.
       "longName": "Montreux"
     }
   ]
+}
+```
+
+### GET /api/v1/routes
+
+Historique des trajets de l'utilisateur connecté.
+
+> **Extension** : Endpoint ajouté pour l'historique utilisateur.
+
+**Query params optionnels:**
+- `per_page` (int, default: 10): Nombre de résultats par page
+
+**Response 200:**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "fromStationId": "MX",
+      "toStationId": "ZW",
+      "fromStation": { "shortName": "MX", "longName": "Montreux" },
+      "toStation": { "shortName": "ZW", "longName": "Zweisimmen" },
+      "analyticCode": "ANA-123",
+      "distanceKm": 62.43,
+      "path": ["MX", "...", "ZW"],
+      "createdAt": "2025-01-15T10:30:00Z"
+    }
+  ],
+  "meta": { "current_page": 1, "last_page": 1, "per_page": 10, "total": 1 }
 }
 ```
 
@@ -151,7 +178,7 @@ Calcule un trajet entre deux stations.
   "fromStationId": "MX",
   "toStationId": "ZW",
   "analyticCode": "ANA-123",
-  "distanceKm": 63.48,
+  "distanceKm": 62.43,
   "path": ["MX", "CGE", "VUAR", "...", "ZW"],
   "createdAt": "2025-01-15T10:30:00Z"
 }
@@ -205,6 +232,7 @@ Calcule un trajet entre deux stations.
 | Code analytique libre | Pas de table de référence fournie |
 | Stations hors distances.json inaccessibles | Erreur 422 si demandées |
 | GET /stations ajouté | Nécessaire pour l'UX (affichage longName, autocomplete), non fourni dans la spec initiale |
+| GET /routes (historique) ajouté | Nécessaire pour l'UX (historique, bouton "Réutiliser") |
 
 ### Algorithme Dijkstra
 
@@ -216,11 +244,12 @@ Requis car :
 ---
 
 ## Architecture cible
+
 ```
 train-routing/
 ├── .claude/
 │   └── workflow.md           # Règles de développement
-├── CLAUDE.md                 # Ce fichier
+├── CLAUDE.md                 # Ce fichier (contexte IA)
 ├── README.md                 # Documentation utilisateur
 ├── docker-compose.yml
 ├── .github/workflows/
@@ -236,6 +265,7 @@ train-routing/
 │   │       ├── Controllers/  # Auth, Station, Route, Stats
 │   │       └── Requests/     # Validation
 │   ├── database/
+│   │   ├── data/             # stations.json, distances.json
 │   │   ├── migrations/
 │   │   └── seeders/          # Import JSON + User démo
 │   └── tests/
@@ -243,28 +273,30 @@ train-routing/
 ├── frontend/
 │   ├── Dockerfile
 │   ├── src/
-│   │   ├── components/       # LoginForm, RouteForm, StatsChart
+│   │   ├── components/       # LoginForm, RouteForm, RouteCard, PathTimeline, StatsChart...
 │   │   ├── views/            # Login, Home, Stats
-│   │   ├── stores/           # Auth (Pinia)
+│   │   ├── stores/           # Auth, Stations (Pinia)
 │   │   ├── services/         # API client typé
+│   │   ├── utils/            # Formatters, error handling
 │   │   └── types/            # Types OpenAPI
 │   └── tests/
 │
-└── data/
-    ├── stations.json
-    └── distances.json
+└── docs/
+    └── screenshots/          # Captures d'écran pour le README
 ```
 
 ---
 
 ## Plan de développement
 
+> Ce plan reflète les phases telles qu'elles ont été définies au démarrage du projet. Chaque phase a été implémentée sur sa branche dédiée puis mergée.
+
 ### Phase 1 : Setup & Infrastructure
 **Branche** : `phase/1-setup`
 
 - Initialisation projet et structure
 - Docker Compose (PostgreSQL, backend, frontend)
-- Laravel 11 + Sanctum + config qualité
+- Laravel 12 + Sanctum + config qualité
 - Vue 3 + TypeScript + Vuetify + config qualité
 - README initial
 
@@ -314,10 +346,7 @@ train-routing/
 
 - LoginView avec validation
 - RouteForm avec autocomplete stations
-    - Affiche `longName` à l'utilisateur ("Montreux")
-    - Recherche sur `shortName` ET `longName`
-    - Envoie `shortName` à l'API ("MX")
-- RouteResult avec visualisation chemin (affiche les `longName`)
+- RouteResult avec visualisation chemin
 - StatsView avec filtres et graphique
 - Tests composants
 
@@ -328,34 +357,18 @@ train-routing/
 ### Phase 5.5 : Enhancements
 **Branche** : `phase/5.5-enhancements`
 
+> Phase intermédiaire ajoutée pour améliorer l'UX au-delà des specs initiales.
+
 #### Backend
-- GET /api/v1/routes : historique des trajets de l'utilisateur connecté
-    - Paginé (per_page configurable)
-    - Inclut les objets `fromStation` et `toStation` avec shortName/longName
-    - Tri par createdAt desc
+- GET /api/v1/routes : historique des trajets utilisateur (paginé)
 - Tests feature pour le nouvel endpoint
 
 #### Frontend
-- Store Pinia `stations`
-    - Chargement des stations au boot de l'app
-    - Persistance localStorage (évite refetch)
-    - Getter pour résoudre shortName → longName
-- Composant `PathTimeline`
-    - Affichage visuel du trajet (timeline verticale)
-    - Mode collapsed (départ/arrivée) et expanded (toutes les stations)
-- Composant `RouteCard` avec expand/collapse
-    - Affichage des détails du trajet (stations, distance, code analytique)
-    - Intégration PathTimeline dans chaque card
-    - Mode highlight pour le dernier trajet calculé (bordure + fond subtil)
-    - Bouton "Utiliser" → pré-remplit le formulaire
+- Store Pinia `stations` avec persistance localStorage
+- Composant `PathTimeline` (timeline verticale du trajet)
+- Composant `RouteCard` avec expand/collapse et highlight
 - Intégration historique dans `HomeView`
-    - Liste paginée des trajets sous le formulaire
-    - Dernier trajet calculé mis en avant (highlight)
-    - Pagination "Charger plus"
-- Améliorations `RouteForm`
-    - Pré-remplissage via props (from, to, code)
-    - Autocomplete avec 5 stations par défaut (pas de "no data")
-    - Persistance du dernier code analytique (localStorage)
+- Améliorations `RouteForm` (pré-remplissage, persistance code analytique)
 - Tests composants
 
 **Validation** : Historique intégré fonctionnel, tests passent, coverage maintenu ≥ 80%
@@ -377,11 +390,13 @@ train-routing/
 ### Phase 7 : Polish & Documentation
 **Branche** : `phase/7-polish`
 
-- README complet
+- README complet avec screenshots
 - Documentation choix techniques
+- Composants réutilisables (AppNavbar, EmptyState, ErrorAlert)
+- Refactoring DRY (utils/formatters, utils/errorUtils)
 - Loading states et error handling UI
-- CORS, rate limiting, headers sécurité
-- Revue finale et cleanup
+- Accessibilité WCAG 2.1 AA
+- Scène 3D sur la page de login
 
 **Validation** : Merge dans main, tag v1.0.0
 
@@ -390,28 +405,29 @@ train-routing/
 ## Checklist finale
 
 ### Fonctionnel
-- [ ] Auth Sanctum opérationnelle
-- [ ] GET /stations retourne les stations avec longName
-- [ ] POST /routes calcule distance et retourne path
-- [ ] GET /stats agrège par code analytique
-- [ ] Filtres date et groupBy fonctionnels
+- [x] Auth Sanctum opérationnelle
+- [x] GET /stations retourne les stations avec longName
+- [x] POST /routes calcule distance et retourne path
+- [x] GET /routes retourne l'historique utilisateur
+- [x] GET /stats agrège par code analytique
+- [x] Filtres date et groupBy fonctionnels
 
 ### Qualité
-- [ ] Coverage backend ≥ 80%
-- [ ] Coverage frontend ≥ 80%
-- [ ] Lint sans erreur (PHPCS, PHPStan, ESLint)
-- [ ] Commits conventionnels et atomiques
+- [x] Coverage backend ≥ 80%
+- [x] Coverage frontend ≥ 80%
+- [x] Lint sans erreur (PHPCS, PHPStan, ESLint)
+- [x] Commits conventionnels et atomiques
 
 ### DevOps
-- [ ] `docker compose up -d` one-command deploy
-- [ ] CI complet sur chaque push
-- [ ] Images publiées sur GHCR
-- [ ] Release avec changelog
+- [x] `docker compose up -d` one-command deploy
+- [x] CI complet sur chaque push
+- [x] Images publiées sur GHCR
+- [x] Release avec changelog
 
 ### Documentation
-- [ ] README avec setup et architecture
-- [ ] Choix techniques justifiés
-- [ ] Hypothèses documentées
+- [x] README avec setup et architecture
+- [x] Choix techniques justifiés
+- [x] Hypothèses documentées
 
 ---
 
