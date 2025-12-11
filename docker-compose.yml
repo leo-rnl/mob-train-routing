@@ -29,6 +29,7 @@ services:
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
+      # Dev-only key, not used in production
       APP_KEY: base64:dGhpc2lzYXRlc3RrZXlmb3JkZXZlbG9wbWVudG9ubHk=
       DB_CONNECTION: pgsql
       DB_HOST: postgres
