@@ -11,6 +11,7 @@
     Title,
     Tooltip,
     Legend,
+    Filler,
   } from 'chart.js'
   import type { DistanceStat, GroupBy } from '@/types/api'
 
@@ -23,7 +24,8 @@
     PointElement,
     Title,
     Tooltip,
-    Legend
+    Legend,
+    Filler
   )
 
   const props = defineProps<{
