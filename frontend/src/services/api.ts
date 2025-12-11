@@ -1,4 +1,5 @@
 import axios from 'axios'
+import type { Router } from 'vue-router'
 import type {
   LoginRequest,
   LoginResponse,
@@ -28,6 +29,20 @@ const api = axios.create({
 })
 
 // ============================================================================
+// Router Integration for 401/419 Redirects
+// ============================================================================
+
+let router: Router | null = null
+
+/**
+ * Initialize API with Vue Router for proper SPA redirects
+ * Call this in main.ts after creating the router
+ */
+export function initApi(appRouter: Router): void {
+  router = appRouter
+}
+
+// ============================================================================
 // Response Interceptor - Handle 401 Unauthorized and 419 CSRF Token Mismatch
 // ============================================================================
 
@@ -37,7 +52,12 @@ api.interceptors.response.use(
     if (error.response?.status === 401 || error.response?.status === 419) {
       // Only redirect if not already on login page
       if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
+        if (router) {
+          router.push('/login')
+        } else {
+          // Fallback if router not initialized
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)

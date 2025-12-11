@@ -2,7 +2,10 @@
   import { ref, computed, onMounted } from 'vue'
   import RouteForm from '@/components/RouteForm.vue'
   import RouteCard from '@/components/RouteCard.vue'
+  import EmptyState from '@/components/EmptyState.vue'
+  import ErrorAlert from '@/components/ErrorAlert.vue'
   import { routesApi } from '@/services/api'
+  import { getApiErrorMessage } from '@/utils/errorUtils'
   import type { Route, PaginationMeta } from '@/types/api'
 
   // Routes state
@@ -48,8 +51,7 @@
       meta.value = data.meta
       currentPage.value = data.meta.current_page
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } }
-      error.value = err.response?.data?.message || 'Erreur lors du chargement des trajets'
+      error.value = getApiErrorMessage(e, 'Erreur lors du chargement des trajets')
     } finally {
       isLoading.value = false
     }
@@ -107,17 +109,7 @@
           <span v-if="meta?.total" class="routes-count">({{ meta.total }})</span>
         </h2>
 
-        <v-alert
-          v-if="error"
-          type="error"
-          variant="tonal"
-          closable
-          role="alert"
-          aria-live="polite"
-          @click:close="error = null"
-        >
-          {{ error }}
-        </v-alert>
+        <ErrorAlert v-model="error" class="mb-4" />
 
         <!-- Last calculated route (highlighted) -->
         <RouteCard v-if="lastCalculated" :route="lastCalculated" highlight />
@@ -146,18 +138,12 @@
         </div>
 
         <!-- Empty state -->
-        <div
+        <EmptyState
           v-if="routes.length === 0 && !lastCalculated && !isLoading"
-          class="empty-state text-center pa-8"
-        >
-          <v-icon size="64" color="grey-lighten-1" class="mb-4" aria-hidden="true">
-            mdi-train-variant
-          </v-icon>
-          <div class="text-h6 text-medium-emphasis">Aucun trajet</div>
-          <div class="text-body-2 text-medium-emphasis">
-            Calculez votre premier trajet pour le voir apparaître ici.
-          </div>
-        </div>
+          icon="mdi-train-variant"
+          title="Aucun trajet"
+          subtitle="Calculez votre premier trajet pour le voir apparaître ici."
+        />
       </div>
     </aside>
   </div>
@@ -193,11 +179,6 @@
 
   .home-layout__aside-content {
     padding: 30px;
-  }
-
-  .empty-state {
-    background-color: rgb(var(--v-theme-surface));
-    border: 1px dashed rgba(0, 0, 0, 0.12);
   }
 
   .routes-count {

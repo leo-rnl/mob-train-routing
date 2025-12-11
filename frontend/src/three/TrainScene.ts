@@ -117,9 +117,9 @@ export class TrainScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
-    // Loader setup with DRACO support (using local decoder from three.js package)
+    // Loader setup with DRACO support (using files from public/libs/draco/)
     const dracoLoader = new DRACOLoader()
-    dracoLoader.setDecoderPath('/node_modules/three/examples/jsm/libs/draco/gltf/')
+    dracoLoader.setDecoderPath('/libs/draco/')
     this.loader = new GLTFLoader()
     this.loader.setDRACOLoader(dracoLoader)
 

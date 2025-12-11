@@ -207,9 +207,9 @@
         v-else-if="!hasData"
         class="chart-container d-flex flex-column align-center justify-center text-medium-emphasis"
       >
-        <v-icon size="48" color="grey-lighten-1" class="mb-2" aria-hidden="true"
-          >mdi-chart-bar</v-icon
-        >
+        <v-icon size="48" color="grey-lighten-1" class="mb-2" aria-hidden="true">
+          mdi-chart-bar
+        </v-icon>
         <span class="text-body-2">Aucune donnée à afficher</span>
       </div>
 

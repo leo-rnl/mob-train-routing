@@ -2,6 +2,8 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { routesApi } from '@/services/api'
   import { useStationsStore } from '@/stores/stations'
+  import { getApiErrorMessage } from '@/utils/errorUtils'
+  import ErrorAlert from '@/components/ErrorAlert.vue'
   import type { Route } from '@/types/api'
 
   const LAST_ANALYTIC_CODE_KEY = 'last_analytic_code'
@@ -158,8 +160,7 @@
       fromSearch.value = ''
       toSearch.value = ''
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } }
-      error.value = err.response?.data?.message || 'Erreur lors du calcul du trajet'
+      error.value = getApiErrorMessage(e, 'Erreur lors du calcul du trajet')
     } finally {
       isSubmitting.value = false
     }
@@ -179,18 +180,7 @@
       {{ stationsStore.error }}
     </v-alert>
 
-    <v-alert
-      v-if="error"
-      type="error"
-      variant="tonal"
-      class="mb-4"
-      closable
-      role="alert"
-      aria-live="polite"
-      @click:close="error = null"
-    >
-      {{ error }}
-    </v-alert>
+    <ErrorAlert v-model="error" class="mb-4" />
 
     <v-form @submit.prevent="handleSubmit">
       <!-- Station inputs with timeline -->

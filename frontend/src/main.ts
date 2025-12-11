@@ -11,6 +11,7 @@ import '@mdi/font/css/materialdesignicons.css'
 
 import App from './App.vue'
 import router from './router'
+import { initApi } from './services/api'
 
 // MOB Design System Theme
 const mobTheme = {
@@ -82,5 +83,8 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(vuetify)
+
+// Initialize API with router for proper SPA redirects on 401/419
+initApi(router)
 
 app.mount('#app')

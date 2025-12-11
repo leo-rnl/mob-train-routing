@@ -3,6 +3,7 @@
   import { watch } from 'vue'
   import { useAuthStore } from '@/stores/auth'
   import { useStationsStore } from '@/stores/stations'
+  import AppNavbar from '@/components/AppNavbar.vue'
 
   const router = useRouter()
   const authStore = useAuthStore()
@@ -38,59 +39,7 @@
     </v-overlay>
 
     <template v-else>
-      <v-app-bar v-if="authStore.isAuthenticated" color="primary" density="comfortable">
-        <v-toolbar-title class="ml-4 font-weight-bold">MOB Train Routing</v-toolbar-title>
-
-        <v-spacer />
-
-        <nav class="d-flex align-center">
-          <v-btn
-            to="/"
-            variant="text"
-            class="nav-link mx-1"
-            :class="{ 'nav-link--active': $route.name === 'home' }"
-          >
-            Accueil
-          </v-btn>
-          <v-btn
-            to="/stats"
-            variant="text"
-            class="nav-link mx-1"
-            :class="{ 'nav-link--active': $route.name === 'stats' }"
-          >
-            Statistiques
-          </v-btn>
-        </nav>
-
-        <v-spacer />
-
-        <v-menu offset-y>
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              variant="plain"
-              class="user-menu-btn mr-2"
-              aria-label="Menu utilisateur"
-            >
-              <v-icon size="small" class="mr-2" aria-hidden="true">mdi-account-circle</v-icon>
-              <span class="text-body-2 font-weight-medium">{{ authStore.user?.name }}</span>
-              <v-icon size="small" class="ml-1" aria-hidden="true">mdi-chevron-down</v-icon>
-            </v-btn>
-          </template>
-          <v-list density="compact" min-width="160">
-            <v-list-item class="text-medium-emphasis">
-              <v-list-item-subtitle>{{ authStore.user?.email }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-divider />
-            <v-list-item @click="handleLogout">
-              <template #prepend>
-                <v-icon size="small" aria-hidden="true">mdi-logout</v-icon>
-              </template>
-              <v-list-item-title>Déconnexion</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-app-bar>
+      <AppNavbar v-if="authStore.isAuthenticated" @logout="handleLogout" />
 
       <v-main>
         <RouterView />
@@ -129,27 +78,5 @@
   .v-btn:focus-visible {
     outline: 2px solid #0c0d19;
     outline-offset: 2px;
-  }
-</style>
-
-<style scoped>
-  /* Navigation links */
-  .nav-link {
-    font-weight: 500;
-    opacity: 0.85;
-  }
-
-  .nav-link:hover {
-    opacity: 1;
-  }
-
-  .nav-link--active {
-    opacity: 1;
-    border-bottom: 2px solid rgb(var(--v-theme-secondary));
-  }
-
-  /* User menu button */
-  .user-menu-btn {
-    font-weight: 500;
   }
 </style>

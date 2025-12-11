@@ -161,7 +161,7 @@ describe('Auth Store', () => {
       const store = useAuthStore()
       await store.login('test@example.com', 'password')
 
-      expect(store.error).toBe('Invalid credentials')
+      expect(store.error).toBe('Identifiants invalides')
     })
 
     it('should clear previous error on new login attempt', async () => {

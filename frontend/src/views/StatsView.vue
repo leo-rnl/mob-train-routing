@@ -3,6 +3,10 @@
   import { statsApi } from '@/services/api'
   import type { DistanceStat, GroupBy } from '@/types/api'
   import StatsChart from '@/components/StatsChart.vue'
+  import EmptyState from '@/components/EmptyState.vue'
+  import ErrorAlert from '@/components/ErrorAlert.vue'
+  import { getApiErrorMessage } from '@/utils/errorUtils'
+  import { formatDateApi, formatDistanceValue } from '@/utils/formatters'
 
   // Filter state
   const fromDate = ref<Date | null>(null)
@@ -29,14 +33,6 @@
     { title: 'Période', key: 'group', sortable: true },
   ]
 
-  function formatDateForApi(date: Date | null): string | undefined {
-    if (!date) return undefined
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
   async function fetchStats() {
     isLoading.value = true
     error.value = null
@@ -44,8 +40,8 @@
     try {
       const params: { from?: string; to?: string; groupBy?: GroupBy } = {}
 
-      const fromStr = formatDateForApi(fromDate.value)
-      const toStr = formatDateForApi(toDate.value)
+      const fromStr = formatDateApi(fromDate.value)
+      const toStr = formatDateApi(toDate.value)
 
       if (fromStr) params.from = fromStr
       if (toStr) params.to = toStr
@@ -55,15 +51,10 @@
       stats.value = data.items
       appliedGroupBy.value = groupBy.value
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } }
-      error.value = err.response?.data?.message || 'Erreur lors du chargement des statistiques'
+      error.value = getApiErrorMessage(e, 'Erreur lors du chargement des statistiques')
     } finally {
       isLoading.value = false
     }
-  }
-
-  function formatDistance(value: number): string {
-    return value.toFixed(2)
   }
 
   const hasActiveFilters = computed(() => {
@@ -147,18 +138,7 @@
           <span v-if="stats.length" class="results-count">({{ stats.length }})</span>
         </h2>
 
-        <v-alert
-          v-if="error"
-          type="error"
-          variant="tonal"
-          class="mb-4"
-          closable
-          role="alert"
-          aria-live="polite"
-          @click:close="error = null"
-        >
-          {{ error }}
-        </v-alert>
+        <ErrorAlert v-model="error" class="mb-4" />
 
         <!-- Chart -->
         <StatsChart :data="stats" :group-by="appliedGroupBy" :loading="isLoading" />
@@ -168,7 +148,7 @@
           <v-data-table :headers="headers" :items="stats" :loading="isLoading">
             <!-- eslint-disable-next-line vue/valid-v-slot -->
             <template #item.totalDistanceKm="{ item }">
-              {{ formatDistance(item.totalDistanceKm) }}
+              {{ formatDistanceValue(item.totalDistanceKm) }}
             </template>
 
             <!-- eslint-disable-next-line vue/valid-v-slot -->
@@ -179,15 +159,12 @@
         </v-card>
 
         <!-- Empty state -->
-        <div v-else-if="!isLoading" class="empty-state text-center pa-8">
-          <v-icon size="64" color="grey-lighten-1" class="mb-4" aria-hidden="true"
-            >mdi-chart-bar</v-icon
-          >
-          <div class="text-h6 text-medium-emphasis">Aucune statistique</div>
-          <div class="text-body-2 text-medium-emphasis">
-            Ajustez les filtres ou calculez des trajets pour voir les statistiques.
-          </div>
-        </div>
+        <EmptyState
+          v-else-if="!isLoading"
+          icon="mdi-chart-bar"
+          title="Aucune statistique"
+          subtitle="Ajustez les filtres ou calculez des trajets pour voir les statistiques."
+        />
       </div>
     </aside>
   </div>
@@ -238,11 +215,6 @@
 
   .stats-table-card:hover {
     border-color: #000;
-  }
-
-  .empty-state {
-    background-color: rgb(var(--v-theme-surface));
-    border: 1px dashed rgba(0, 0, 0, 0.12);
   }
 
   /* Responsive: stack on mobile */

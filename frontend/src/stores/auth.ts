@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { authApi, csrfApi } from '@/services/api'
-import type { AxiosError } from 'axios'
-import type { ApiError, User } from '@/types/api'
+import { getApiErrorMessage } from '@/utils/errorUtils'
+import type { User } from '@/types/api'
 
 interface AuthState {
   user: User | null
@@ -37,8 +37,7 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.data.user
         return true
       } catch (e) {
-        const error = e as AxiosError<ApiError>
-        this.error = error.response?.data?.message || 'Identifiants invalides'
+        this.error = getApiErrorMessage(e, 'Identifiants invalides')
         return false
       } finally {
         this.isLoading = false
