@@ -11,14 +11,14 @@ Application de calcul d'itinéraires ferroviaires pour le réseau MOB (Montreux 
 ```bash
 git clone https://github.com/leo-rnl/mob-train-routing.git
 cd mob-train-routing
-docker compose up -d
+make dev
 ```
 
 L'application est accessible sur :
 - **Frontend** : http://localhost:3000
 - **API** : http://localhost:8000
 
-> Pour le déploiement production avec HTTPS, voir la section [Déploiement](#déploiement).
+> Pour le déploiement production avec HTTPS : `make prod` (voir [Déploiement](#déploiement)).
 
 **Compte de démonstration** :
 ```
@@ -206,8 +206,19 @@ Dans le secteur du transport, l'accessibilité numérique est un enjeu courant. 
 
 - Docker Desktop
 - Docker Compose v2+
+- Make (préinstallé sur macOS/Linux)
 
-### Commandes
+### Commandes Make
+
+| Commande | Description |
+|----------|-------------|
+| `make dev` | Démarrer l'environnement de développement |
+| `make prod` | Démarrer la production avec HTTPS |
+| `make down` | Arrêter tous les containers |
+| `make logs` | Voir les logs (filtrer avec `SERVICE=backend`) |
+| `make clean` | Supprimer containers et volumes |
+
+### Commandes qualité
 
 **Backend** :
 ```bash
@@ -234,15 +245,13 @@ npm run test            # Vitest
 Le déploiement production utilise **Traefik** comme reverse proxy avec terminaison TLS.
 
 ```bash
-# 1. Générer les certificats self-signed (une seule fois)
-./traefik/generate-certs.sh
-
-# 2. Copier et éditer les variables d'environnement
-cp .env.example .env
-
-# 3. Démarrer le stack
-docker compose -f docker-compose.prod.yml up -d --build
+make prod
 ```
+
+Cette commande :
+1. Génère les certificats self-signed (si absents)
+2. Crée le fichier `.env` depuis `.env.example` (si absent)
+3. Démarre le stack production
 
 L'application est accessible sur :
 - **Frontend** : https://localhost
