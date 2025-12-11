@@ -33,5 +33,5 @@ RUN composer dump-autoload --optimize
 # Expose port
 EXPOSE 8000
 
-# Start Laravel development server
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Run migrations, seed, and start Laravel development server
+CMD sh -c "php artisan migrate --seed && php artisan serve --host=0.0.0.0 --port=8000"

@@ -21,10 +21,10 @@ if [ $attempt -eq $max_attempts ]; then
     echo "Warning: Could not verify database connection, continuing anyway..."
 fi
 
-# Run migrations if AUTO_MIGRATE is set
+# Run migrations and seed if AUTO_MIGRATE is set
 if [ "${AUTO_MIGRATE:-false}" = "true" ]; then
     echo "Running database migrations..."
-    php artisan migrate --force
+    php artisan migrate --seed --force
 fi
 
 # Clear and cache configuration for production
