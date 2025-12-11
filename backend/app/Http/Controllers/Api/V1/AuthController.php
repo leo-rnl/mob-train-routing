@@ -18,7 +18,7 @@ class AuthController extends Controller
     {
         if (!Auth::attempt($request->validated())) {
             return response()->json([
-                'message' => 'Invalid credentials',
+                'message' => 'Identifiants invalides',
             ], 401);
         }
 
@@ -52,7 +52,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'message' => 'Logged out',
+            'message' => 'Déconnexion réussie',
         ]);
     }
 
@@ -72,7 +72,7 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
-                'message' => 'Invalid credentials',
+                'message' => 'Identifiants invalides',
             ], 401);
         }
 

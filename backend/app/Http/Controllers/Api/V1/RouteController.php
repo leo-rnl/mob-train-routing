@@ -47,9 +47,9 @@ class RouteController extends Controller
 
         if ($result === null) {
             return response()->json([
-                'message' => 'No path exists between the specified stations.',
+                'message' => 'Aucun chemin n\'existe entre les stations spécifiées.',
                 'errors' => [
-                    'route' => ['No path exists between the specified stations.'],
+                    'route' => ['Aucun chemin n\'existe entre les stations spécifiées.'],
                 ],
             ], 422);
         }

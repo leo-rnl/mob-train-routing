@@ -61,7 +61,7 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(401)
             ->assertJson([
-                'message' => 'Invalid credentials',
+                'message' => 'Identifiants invalides',
             ]);
 
         $this->assertGuest();
@@ -119,7 +119,7 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'message' => 'Logged out',
+                'message' => 'Déconnexion réussie',
             ]);
     }
 
@@ -197,7 +197,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $response->assertStatus(401)
-            ->assertJson(['message' => 'Invalid credentials']);
+            ->assertJson(['message' => 'Identifiants invalides']);
     }
 
     public function test_token_validates_required_fields(): void
@@ -300,7 +300,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJson(['message' => 'Logged out']);
+            ->assertJson(['message' => 'Déconnexion réussie']);
 
         // Token should be deleted from database
         $this->assertDatabaseCount('personal_access_tokens', 0);
