@@ -140,6 +140,10 @@ Choisi pour sa cohérence avec la stack MOB et son support natif des UUID.
 
 Implémenté dans `GraphService` car la spec OpenAPI exige le champ `path` avec la liste des stations traversées.
 
+### Messages d'erreur
+
+Les messages d'erreur de l'API sont en français pour rester cohérents avec l'interface utilisateur. Sur un projet à plus grande échelle, une solution i18n aurait été plus pertinente.
+
 ### Extensions
 
 Quelques fonctionnalités ajoutées au-delà de la spec :
@@ -184,6 +188,8 @@ Pipeline GitHub Actions :
 4. Build des images Docker
 5. Scan de vulnérabilités (Trivy)
 6. Test DAST (OWASP ZAP)
+
+> **Note DAST** : Le scan ZAP remonte des warnings sur des headers de hardening avancés (CSP, HSTS preload, etc.) que j'ai estimé hors scope de ce test technique.
 
 ---
 
