@@ -1,24 +1,16 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, onMounted } from 'vue'
   import { statsApi } from '@/services/api'
   import type { DistanceStat, GroupBy } from '@/types/api'
+  import { useStatsFilters, GROUP_BY_OPTIONS } from '@/composables/useStatsFilters'
   import StatsChart from '@/components/StatsChart.vue'
   import EmptyState from '@/components/EmptyState.vue'
   import ErrorAlert from '@/components/ErrorAlert.vue'
   import { getApiErrorMessage } from '@/utils/errorUtils'
-  import { formatDateApi, formatDistanceValue } from '@/utils/formatters'
+  import { formatDistanceValue } from '@/utils/formatters'
 
-  // Filter state
-  const fromDate = ref<Date | null>(null)
-  const toDate = ref<Date | null>(null)
-  const groupBy = ref<GroupBy>('none')
-
-  const groupByOptions = [
-    { title: 'Aucun', value: 'none' },
-    { title: 'Par jour', value: 'day' },
-    { title: 'Par mois', value: 'month' },
-    { title: 'Par année', value: 'year' },
-  ]
+  // Composables
+  const filters = useStatsFilters()
 
   // Data state
   const stats = ref<DistanceStat[]>([])
@@ -38,18 +30,10 @@
     error.value = null
 
     try {
-      const params: { from?: string; to?: string; groupBy?: GroupBy } = {}
-
-      const fromStr = formatDateApi(fromDate.value)
-      const toStr = formatDateApi(toDate.value)
-
-      if (fromStr) params.from = fromStr
-      if (toStr) params.to = toStr
-      if (groupBy.value !== 'none') params.groupBy = groupBy.value
-
+      const params = filters.getParams()
       const { data } = await statsApi.distances(params)
       stats.value = data.items
-      appliedGroupBy.value = groupBy.value
+      appliedGroupBy.value = filters.groupBy.value
     } catch (e) {
       error.value = getApiErrorMessage(e, 'Erreur lors du chargement des statistiques')
     } finally {
@@ -57,14 +41,8 @@
     }
   }
 
-  const hasActiveFilters = computed(() => {
-    return fromDate.value !== null || toDate.value !== null || groupBy.value !== 'none'
-  })
-
   function resetFilters() {
-    fromDate.value = null
-    toDate.value = null
-    groupBy.value = 'none'
+    filters.reset()
     fetchStats()
   }
 
@@ -80,7 +58,7 @@
 
         <div class="stats-filters">
           <v-date-input
-            v-model="fromDate"
+            v-model="filters.fromDate.value"
             label="Date de début"
             variant="outlined"
             density="compact"
@@ -91,7 +69,7 @@
           />
 
           <v-date-input
-            v-model="toDate"
+            v-model="filters.toDate.value"
             label="Date de fin"
             variant="outlined"
             density="compact"
@@ -102,8 +80,8 @@
           />
 
           <v-select
-            v-model="groupBy"
-            :items="groupByOptions"
+            v-model="filters.groupBy.value"
+            :items="GROUP_BY_OPTIONS"
             label="Grouper par"
             variant="outlined"
             density="compact"
@@ -116,7 +94,7 @@
           </v-btn>
 
           <v-btn
-            v-if="hasActiveFilters"
+            v-if="filters.hasActiveFilters.value"
             variant="text"
             block
             class="mt-2"

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Distance;
+use App\Contracts\DistanceRepositoryInterface;
 use SplPriorityQueue;
 
 class GraphService
@@ -14,8 +14,13 @@ class GraphService
 
     private bool $loaded = false;
 
+    public function __construct(
+        private readonly DistanceRepositoryInterface $distanceRepository
+    ) {
+    }
+
     /**
-     * Load the graph from the database.
+     * Load the graph from the repository.
      */
     public function loadGraph(): void
     {
@@ -25,9 +30,11 @@ class GraphService
 
         // Railway network distances are static reference data.
         // Cache indefinitely; use cache()->forget('railway_distances') to invalidate if needed.
-        $distances = cache()->remember('railway_distances', null, fn () => Distance::query()
-            ->select(['parent_station', 'child_station', 'distance_km'])
-            ->get());
+        $distances = cache()->remember(
+            'railway_distances',
+            null,
+            fn () => $this->distanceRepository->getAllDistances()
+        );
 
         foreach ($distances as $distance) {
             $parent = $distance->parent_station;

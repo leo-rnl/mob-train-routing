@@ -1,73 +1,47 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, onMounted } from 'vue'
   import RouteForm from '@/components/RouteForm.vue'
   import RouteCard from '@/components/RouteCard.vue'
   import EmptyState from '@/components/EmptyState.vue'
   import ErrorAlert from '@/components/ErrorAlert.vue'
   import { routesApi } from '@/services/api'
+  import { usePagination } from '@/composables/usePagination'
+  import { useRouteHistory } from '@/composables/useRouteHistory'
   import { getApiErrorMessage } from '@/utils/errorUtils'
-  import type { Route, PaginationMeta } from '@/types/api'
+  import type { Route } from '@/types/api'
 
-  // Routes state
-  const routes = ref<Route[]>([])
-  const meta = ref<PaginationMeta | null>(null)
-  const isLoading = ref(false)
+  // Composables
+  const pagination = usePagination({ perPage: 10 })
+  const history = useRouteHistory()
+
+  // Local state
   const error = ref<string | null>(null)
-
-  // Last calculated route in this session (highlighted)
-  const lastCalculated = ref<Route | null>(null)
-
-  // Pre-fill data for RouteForm
   const prefillData = ref<{ from?: string; to?: string; code?: string } | null>(null)
 
-  // Pagination
-  const currentPage = ref(1)
-  const perPage = 10
-
-  const hasMore = computed(() => {
-    if (!meta.value) return false
-    return meta.value.current_page < meta.value.last_page
-  })
-
-  // Previous routes (excluding the last calculated one)
-  const previousRoutes = computed(() => {
-    if (!lastCalculated.value) return routes.value
-    return routes.value.filter((r) => r.id !== lastCalculated.value?.id)
-  })
-
   async function fetchRoutes(page = 1, append = false) {
-    isLoading.value = true
+    pagination.isLoading.value = true
     error.value = null
 
     try {
-      const { data } = await routesApi.list({ page, per_page: perPage })
+      const { data } = await routesApi.list({ page, per_page: pagination.perPage })
 
       if (append) {
-        routes.value = [...routes.value, ...data.data]
+        history.appendRoutes(data.data)
       } else {
-        routes.value = data.data
+        history.setRoutes(data.data)
       }
 
-      meta.value = data.meta
-      currentPage.value = data.meta.current_page
+      pagination.setMeta(data.meta)
     } catch (e) {
       error.value = getApiErrorMessage(e, 'Erreur lors du chargement des trajets')
     } finally {
-      isLoading.value = false
+      pagination.isLoading.value = false
     }
   }
 
   function handleRouteCalculated(routeData: Route) {
-    // Set as highlighted
-    lastCalculated.value = routeData
-
-    // Add to the beginning of routes list if not already there
-    const existingIndex = routes.value.findIndex((r) => r.id === routeData.id)
-    if (existingIndex === -1) {
-      routes.value.unshift(routeData)
-    }
-
-    // Clear pre-fill
+    history.setLastCalculated(routeData)
+    pagination.incrementTotal()
     prefillData.value = null
   }
 
@@ -77,14 +51,12 @@
       to: route.toStationId,
       code: route.analyticCode,
     }
-
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function loadMore() {
-    if (hasMore.value) {
-      fetchRoutes(currentPage.value + 1, true)
+    if (pagination.hasMore.value) {
+      fetchRoutes(pagination.nextPage(), true)
     }
   }
 
@@ -106,27 +78,41 @@
       <div class="home-layout__aside-content">
         <h2 class="text-h6 font-weight-bold mb-4">
           Historique des trajets
-          <span v-if="meta?.total" class="routes-count">({{ meta.total }})</span>
+          <span v-if="pagination.total.value" class="routes-count"
+            >({{ pagination.total.value }})</span
+          >
         </h2>
 
         <ErrorAlert v-model="error" class="mb-4" />
 
         <!-- Last calculated route (highlighted) -->
-        <RouteCard v-if="lastCalculated" :route="lastCalculated" highlight />
+        <RouteCard
+          v-if="history.lastCalculated.value"
+          :route="history.lastCalculated.value"
+          highlight
+        />
 
         <!-- Previous routes -->
         <RouteCard
-          v-for="route in previousRoutes"
+          v-for="route in history.previousRoutes.value"
           :key="route.id"
           :route="route"
           @use="handleUseRoute"
         />
 
         <!-- Loading indicator -->
-        <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mt-4" />
+        <v-progress-linear
+          v-if="pagination.isLoading.value"
+          indeterminate
+          color="primary"
+          class="mt-4"
+        />
 
         <!-- Load more button -->
-        <div v-if="hasMore && !isLoading" class="text-center mt-4">
+        <div
+          v-if="pagination.hasMore.value && !pagination.isLoading.value"
+          class="text-center mt-4"
+        >
           <v-btn
             variant="outlined"
             color="primary"
@@ -139,7 +125,7 @@
 
         <!-- Empty state -->
         <EmptyState
-          v-if="routes.length === 0 && !lastCalculated && !isLoading"
+          v-if="history.isEmpty() && !pagination.isLoading.value"
           icon="mdi-train-variant"
           title="Aucun trajet"
           subtitle="Calculez votre premier trajet pour le voir apparaître ici."

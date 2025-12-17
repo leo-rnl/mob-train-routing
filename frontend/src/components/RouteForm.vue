@@ -2,11 +2,11 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { routesApi } from '@/services/api'
   import { useStationsStore } from '@/stores/stations'
+  import { useAnalyticCode } from '@/composables/useAnalyticCode'
+  import { useStationFilter } from '@/composables/useStationFilter'
   import { getApiErrorMessage } from '@/utils/errorUtils'
   import ErrorAlert from '@/components/ErrorAlert.vue'
   import type { Route } from '@/types/api'
-
-  const LAST_ANALYTIC_CODE_KEY = 'last_analytic_code'
 
   const props = defineProps<{
     prefill?: { from?: string; to?: string; code?: string } | null
@@ -17,6 +17,7 @@
   }>()
 
   const stationsStore = useStationsStore()
+  const analyticCodeStorage = useAnalyticCode()
 
   // Form state
   const fromStation = ref<string | null>(null)
@@ -26,6 +27,19 @@
   // Autocomplete search state
   const fromSearch = ref('')
   const toSearch = ref('')
+
+  // Station filtering via composables
+  const { filteredStations: fromStations } = useStationFilter({
+    stations: computed(() => stationsStore.stationsList),
+    search: fromSearch,
+    selected: fromStation,
+  })
+
+  const { filteredStations: toStations } = useStationFilter({
+    stations: computed(() => stationsStore.stationsList),
+    search: toSearch,
+    selected: toStation,
+  })
 
   // Watch prefill prop to pre-fill form fields
   watch(
@@ -48,61 +62,6 @@
     { immediate: true }
   )
 
-  // Default stations to show when no search (first 5)
-  const DEFAULT_STATIONS_COUNT = 5
-
-  // Computed filtered lists based on search (local filtering from store)
-  // Always include the selected station to ensure Vuetify can display its longName
-  const fromStations = computed(() => {
-    const search = fromSearch.value.toLowerCase()
-    let results: typeof stationsStore.stationsList
-
-    if (!search || search.length < 2) {
-      results = stationsStore.stationsList.slice(0, DEFAULT_STATIONS_COUNT)
-    } else {
-      results = stationsStore.stationsList.filter(
-        (s) =>
-          s.shortName.toLowerCase().includes(search) || s.longName.toLowerCase().includes(search)
-      )
-    }
-
-    // Ensure selected station is always in the list
-    if (fromStation.value) {
-      const selectedInResults = results.some((s) => s.shortName === fromStation.value)
-      if (!selectedInResults) {
-        const selected = stationsStore.stationsList.find((s) => s.shortName === fromStation.value)
-        if (selected) results = [selected, ...results]
-      }
-    }
-
-    return results
-  })
-
-  const toStations = computed(() => {
-    const search = toSearch.value.toLowerCase()
-    let results: typeof stationsStore.stationsList
-
-    if (!search || search.length < 2) {
-      results = stationsStore.stationsList.slice(0, DEFAULT_STATIONS_COUNT)
-    } else {
-      results = stationsStore.stationsList.filter(
-        (s) =>
-          s.shortName.toLowerCase().includes(search) || s.longName.toLowerCase().includes(search)
-      )
-    }
-
-    // Ensure selected station is always in the list
-    if (toStation.value) {
-      const selectedInResults = results.some((s) => s.shortName === toStation.value)
-      if (!selectedInResults) {
-        const selected = stationsStore.stationsList.find((s) => s.shortName === toStation.value)
-        if (selected) results = [selected, ...results]
-      }
-    }
-
-    return results
-  })
-
   // Submit state
   const isSubmitting = ref(false)
   const error = ref<string | null>(null)
@@ -114,7 +73,7 @@
 
   // Load persisted analytic code on mount
   onMounted(() => {
-    const savedCode = localStorage.getItem(LAST_ANALYTIC_CODE_KEY)
+    const savedCode = analyticCodeStorage.load()
     if (savedCode && !analyticCode.value) {
       analyticCode.value = savedCode
     }
@@ -149,7 +108,7 @@
       })
 
       // Persist analytic code
-      localStorage.setItem(LAST_ANALYTIC_CODE_KEY, code)
+      analyticCodeStorage.save(code)
 
       // Emit the calculated route
       emit('route-calculated', data)

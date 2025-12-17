@@ -9,7 +9,7 @@
 #   make clean    - Remove all containers and volumes
 # =============================================================================
 
-.PHONY: dev prod down logs clean prod-init help
+.PHONY: dev dev-init prod prod-init down logs clean help
 
 # Default target
 .DEFAULT_GOAL := help
@@ -18,13 +18,19 @@
 # Development
 # -----------------------------------------------------------------------------
 
-dev: ## Start development environment
+dev: dev-init ## Start development environment
 	@echo "Starting development environment..."
-	@docker compose up -d
+	@docker compose --env-file .env.docker up -d
 	@echo ""
 	@echo "Development environment ready:"
 	@echo "  Frontend: http://localhost:3000"
 	@echo "  API:      http://localhost:8000"
+
+dev-init: ## Initialize development environment (.env.docker)
+	@if [ ! -f .env.docker ]; then \
+		echo "Creating .env.docker from .env.docker.example..."; \
+		cp .env.docker.example .env.docker; \
+	fi
 
 # -----------------------------------------------------------------------------
 # Production
