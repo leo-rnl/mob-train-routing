@@ -49,9 +49,9 @@
       <div class="home-layout__aside-content">
         <h2 class="text-h6 font-weight-bold mb-4">
           Historique des trajets
-          <span v-if="pagination.total.value" class="routes-count"
-            >({{ pagination.total.value }})</span
-          >
+          <span v-if="pagination.total.value" class="routes-count">
+            ({{ pagination.total.value }})
+          </span>
         </h2>
 
         <ErrorAlert v-model="routeList.error.value" class="mb-4" />

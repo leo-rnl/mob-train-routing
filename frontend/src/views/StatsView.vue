@@ -61,7 +61,12 @@
             class="mb-6"
           />
 
-          <v-btn color="primary" block :loading="statsFetch.isLoading.value" @click="statsFetch.fetch">
+          <v-btn
+            color="primary"
+            block
+            :loading="statsFetch.isLoading.value"
+            @click="statsFetch.fetch"
+          >
             Appliquer les filtres
           </v-btn>
 
@@ -85,17 +90,30 @@
       <div class="stats-layout__aside-content">
         <h2 class="text-h6 font-weight-bold mb-4">
           Résultats
-          <span v-if="statsFetch.stats.value.length" class="results-count">({{ statsFetch.stats.value.length }})</span>
+          <span v-if="statsFetch.stats.value.length" class="results-count">
+            ({{ statsFetch.stats.value.length }})
+          </span>
         </h2>
 
         <ErrorAlert v-model="statsFetch.error.value" class="mb-4" />
 
         <!-- Chart -->
-        <StatsChart :data="statsFetch.stats.value" :group-by="statsFetch.appliedGroupBy.value" :loading="statsFetch.isLoading.value" />
+        <StatsChart
+          :data="statsFetch.stats.value"
+          :group-by="statsFetch.appliedGroupBy.value"
+          :loading="statsFetch.isLoading.value"
+        />
 
         <!-- Data table -->
-        <v-card v-if="statsFetch.stats.value.length || statsFetch.isLoading.value" class="stats-table-card">
-          <v-data-table :headers="headers" :items="statsFetch.stats.value" :loading="statsFetch.isLoading.value">
+        <v-card
+          v-if="statsFetch.stats.value.length || statsFetch.isLoading.value"
+          class="stats-table-card"
+        >
+          <v-data-table
+            :headers="headers"
+            :items="statsFetch.stats.value"
+            :loading="statsFetch.isLoading.value"
+          >
             <!-- eslint-disable-next-line vue/valid-v-slot -->
             <template #item.totalDistanceKm="{ item }">
               {{ formatDistanceValue(item.totalDistanceKm) }}
