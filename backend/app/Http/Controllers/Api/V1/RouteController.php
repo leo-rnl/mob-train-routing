@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\RouteRepositoryInterface;
+use App\Contracts\RouteServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreRouteRequest;
 use App\Http\Resources\RouteResource;
-use App\Models\Route;
-use App\Services\GraphService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -14,7 +14,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class RouteController extends Controller
 {
     public function __construct(
-        private readonly GraphService $graphService
+        private readonly RouteServiceInterface $routeService,
+        private readonly RouteRepositoryInterface $routeRepository
     ) {
     }
 
@@ -25,10 +26,7 @@ class RouteController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $routes = $user->routes()
-            ->with(['fromStation', 'toStation'])
-            ->latest()
-            ->paginate($perPage);
+        $routes = $this->routeRepository->findByUserPaginated($user->id, $perPage);
 
         return RouteResource::collection($routes);
     }
@@ -42,10 +40,14 @@ class RouteController extends Controller
         /** @var string $analyticCode */
         $analyticCode = $request->validated('analyticCode');
 
-        $this->graphService->loadGraph();
-        $result = $this->graphService->findShortestPath($from, $to);
+        $route = $this->routeService->calculateAndStore(
+            $from,
+            $to,
+            $analyticCode,
+            $request->user()?->id
+        );
 
-        if ($result === null) {
+        if ($route === null) {
             return response()->json([
                 'message' => 'Aucun chemin n\'existe entre les stations spécifiées.',
                 'errors' => [
@@ -53,15 +55,6 @@ class RouteController extends Controller
                 ],
             ], 422);
         }
-
-        $route = Route::create([
-            'user_id' => $request->user()?->id,
-            'from_station_id' => $from,
-            'to_station_id' => $to,
-            'analytic_code' => $analyticCode,
-            'distance_km' => $result['distance'],
-            'path' => $result['path'],
-        ]);
 
         return (new RouteResource($route))
             ->response()

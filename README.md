@@ -4,6 +4,15 @@ Application de calcul d'itinéraires ferroviaires pour le réseau MOB (Montreux 
 
 [![CI](https://github.com/leo-rnl/mob-train-routing/actions/workflows/ci.yml/badge.svg)](https://github.com/leo-rnl/mob-train-routing/actions/workflows/ci.yml)
 
+> **Note — Affinements architecturaux (Décembre 2025)**
+>
+> Suite aux retours de l'équipe MOB, l'architecture a été affinée pour mieux s'aligner sur leurs conventions internes :
+> - **Backend** : Ajout d'une couche Repository avec interfaces, injection de dépendances dans GraphService
+> - **Frontend** : Extraction de la logique réutilisable dans des composables Vue 3
+> - **Configuration** : Contrainte PHP 8.4 explicite, variables d'environnement Docker séparées
+>
+> Ces ajustements renforcent la cohérence avec les pratiques de l'équipe.
+
 ---
 
 ## Démarrage rapide
@@ -311,7 +320,7 @@ docker pull ghcr.io/leo-rnl/mob-train-routing-frontend:latest
 
 ### Documentation
 
-- [CLAUDE.md](CLAUDE.md) - Spécifications et workflow
+- [CLAUDE.md](claude.md) - Spécifications et workflow
 - [.claude/workflow.md](.claude/workflow.md) - Conventions de développement
 
 ---
