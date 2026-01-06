@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\AuthServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Requests\Api\V1\TokenRequest;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly AuthServiceInterface $authService
+    ) {
+    }
+
     public function login(LoginRequest $request): JsonResponse
     {
         if (!Auth::attempt($request->validated())) {
@@ -68,19 +72,18 @@ class AuthController extends Controller
         /** @var array{email: string, password: string, device_name: string} $validated */
         $validated = $request->validated();
 
-        $user = User::where('email', $validated['email'])->first();
+        $result = $this->authService->authenticateAndCreateToken(
+            $validated['email'],
+            $validated['password'],
+            $validated['device_name']
+        );
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
+        if ($result === null) {
             return response()->json([
                 'message' => 'Identifiants invalides',
             ], 401);
         }
 
-        $token = $user->createToken($validated['device_name']);
-
-        return response()->json([
-            'token' => $token->plainTextToken,
-            'expires_at' => null,
-        ]);
+        return response()->json($result);
     }
 }

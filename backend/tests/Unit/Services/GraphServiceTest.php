@@ -2,7 +2,10 @@
 
 namespace Tests\Unit\Services;
 
+use App\Contracts\DistanceRepositoryInterface;
 use App\Services\GraphService;
+use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\TestCase;
 
 class GraphServiceTest extends TestCase
@@ -12,7 +15,17 @@ class GraphServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->graphService = new GraphService();
+
+        /** @var DistanceRepositoryInterface&MockInterface $mockRepository */
+        $mockRepository = Mockery::mock(DistanceRepositoryInterface::class);
+
+        $this->graphService = new GraphService($mockRepository);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 
     /**

@@ -2,7 +2,20 @@
 
 namespace App\Providers;
 
+use App\Contracts\AuthServiceInterface;
+use App\Contracts\DistanceRepositoryInterface;
+use App\Contracts\GraphServiceInterface;
+use App\Contracts\RouteRepositoryInterface;
+use App\Contracts\RouteServiceInterface;
+use App\Contracts\StationRepositoryInterface;
+use App\Contracts\StatsServiceInterface;
+use App\Repositories\DistanceRepository;
+use App\Repositories\RouteRepository;
+use App\Repositories\StationRepository;
+use App\Services\AuthService;
 use App\Services\GraphService;
+use App\Services\RouteService;
+use App\Services\StatsService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,9 +29,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(GraphService::class, function () {
-            return new GraphService();
-        });
+        // Repositories
+        $this->app->bind(DistanceRepositoryInterface::class, DistanceRepository::class);
+        $this->app->bind(RouteRepositoryInterface::class, RouteRepository::class);
+        $this->app->bind(StationRepositoryInterface::class, StationRepository::class);
+
+        // Services
+        $this->app->bind(AuthServiceInterface::class, AuthService::class);
+        $this->app->bind(RouteServiceInterface::class, RouteService::class);
+        $this->app->bind(StatsServiceInterface::class, StatsService::class);
+        $this->app->singleton(GraphServiceInterface::class, GraphService::class);
     }
 
     /**

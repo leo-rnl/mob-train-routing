@@ -1,30 +1,15 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
-  import { statsApi } from '@/services/api'
-  import type { DistanceStat, GroupBy } from '@/types/api'
+  import { onMounted } from 'vue'
+  import { useStatsFilters, GROUP_BY_OPTIONS } from '@/composables/useStatsFilters'
+  import { useStatsFetch } from '@/composables/useStatsFetch'
   import StatsChart from '@/components/StatsChart.vue'
   import EmptyState from '@/components/EmptyState.vue'
   import ErrorAlert from '@/components/ErrorAlert.vue'
-  import { getApiErrorMessage } from '@/utils/errorUtils'
-  import { formatDateApi, formatDistanceValue } from '@/utils/formatters'
+  import { formatDistanceValue } from '@/utils/formatters'
 
-  // Filter state
-  const fromDate = ref<Date | null>(null)
-  const toDate = ref<Date | null>(null)
-  const groupBy = ref<GroupBy>('none')
-
-  const groupByOptions = [
-    { title: 'Aucun', value: 'none' },
-    { title: 'Par jour', value: 'day' },
-    { title: 'Par mois', value: 'month' },
-    { title: 'Par année', value: 'year' },
-  ]
-
-  // Data state
-  const stats = ref<DistanceStat[]>([])
-  const appliedGroupBy = ref<GroupBy>('none')
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
+  // Composables
+  const filters = useStatsFilters()
+  const statsFetch = useStatsFetch({ filters })
 
   // Table headers
   const headers = [
@@ -33,42 +18,7 @@
     { title: 'Période', key: 'group', sortable: true },
   ]
 
-  async function fetchStats() {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const params: { from?: string; to?: string; groupBy?: GroupBy } = {}
-
-      const fromStr = formatDateApi(fromDate.value)
-      const toStr = formatDateApi(toDate.value)
-
-      if (fromStr) params.from = fromStr
-      if (toStr) params.to = toStr
-      if (groupBy.value !== 'none') params.groupBy = groupBy.value
-
-      const { data } = await statsApi.distances(params)
-      stats.value = data.items
-      appliedGroupBy.value = groupBy.value
-    } catch (e) {
-      error.value = getApiErrorMessage(e, 'Erreur lors du chargement des statistiques')
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const hasActiveFilters = computed(() => {
-    return fromDate.value !== null || toDate.value !== null || groupBy.value !== 'none'
-  })
-
-  function resetFilters() {
-    fromDate.value = null
-    toDate.value = null
-    groupBy.value = 'none'
-    fetchStats()
-  }
-
-  onMounted(fetchStats)
+  onMounted(() => statsFetch.fetch())
 </script>
 
 <template>
@@ -80,7 +30,7 @@
 
         <div class="stats-filters">
           <v-date-input
-            v-model="fromDate"
+            v-model="filters.fromDate.value"
             label="Date de début"
             variant="outlined"
             density="compact"
@@ -91,7 +41,7 @@
           />
 
           <v-date-input
-            v-model="toDate"
+            v-model="filters.toDate.value"
             label="Date de fin"
             variant="outlined"
             density="compact"
@@ -102,8 +52,8 @@
           />
 
           <v-select
-            v-model="groupBy"
-            :items="groupByOptions"
+            v-model="filters.groupBy.value"
+            :items="GROUP_BY_OPTIONS"
             label="Grouper par"
             variant="outlined"
             density="compact"
@@ -111,18 +61,18 @@
             class="mb-6"
           />
 
-          <v-btn color="primary" block :loading="isLoading" @click="fetchStats">
+          <v-btn color="primary" block :loading="statsFetch.isLoading.value" @click="statsFetch.fetch">
             Appliquer les filtres
           </v-btn>
 
           <v-btn
-            v-if="hasActiveFilters"
+            v-if="filters.hasActiveFilters.value"
             variant="text"
             block
             class="mt-2"
-            :disabled="isLoading"
+            :disabled="statsFetch.isLoading.value"
             aria-label="Réinitialiser tous les filtres"
-            @click="resetFilters"
+            @click="statsFetch.resetAndFetch"
           >
             Réinitialiser
           </v-btn>
@@ -135,17 +85,17 @@
       <div class="stats-layout__aside-content">
         <h2 class="text-h6 font-weight-bold mb-4">
           Résultats
-          <span v-if="stats.length" class="results-count">({{ stats.length }})</span>
+          <span v-if="statsFetch.stats.value.length" class="results-count">({{ statsFetch.stats.value.length }})</span>
         </h2>
 
-        <ErrorAlert v-model="error" class="mb-4" />
+        <ErrorAlert v-model="statsFetch.error.value" class="mb-4" />
 
         <!-- Chart -->
-        <StatsChart :data="stats" :group-by="appliedGroupBy" :loading="isLoading" />
+        <StatsChart :data="statsFetch.stats.value" :group-by="statsFetch.appliedGroupBy.value" :loading="statsFetch.isLoading.value" />
 
         <!-- Data table -->
-        <v-card v-if="stats.length || isLoading" class="stats-table-card">
-          <v-data-table :headers="headers" :items="stats" :loading="isLoading">
+        <v-card v-if="statsFetch.stats.value.length || statsFetch.isLoading.value" class="stats-table-card">
+          <v-data-table :headers="headers" :items="statsFetch.stats.value" :loading="statsFetch.isLoading.value">
             <!-- eslint-disable-next-line vue/valid-v-slot -->
             <template #item.totalDistanceKm="{ item }">
               {{ formatDistanceValue(item.totalDistanceKm) }}
@@ -160,7 +110,7 @@
 
         <!-- Empty state -->
         <EmptyState
-          v-else-if="!isLoading"
+          v-else-if="!statsFetch.isLoading.value"
           icon="mdi-chart-bar"
           title="Aucune statistique"
           subtitle="Ajustez les filtres ou calculez des trajets pour voir les statistiques."

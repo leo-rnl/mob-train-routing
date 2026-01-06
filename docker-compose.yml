@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: mob-postgres
     environment:
-      POSTGRES_DB: mob_train
-      POSTGRES_USER: mob
-      POSTGRES_PASSWORD: mob_secret
+      POSTGRES_DB: ${POSTGRES_DB:-mob_train}
+      POSTGRES_USER: ${POSTGRES_USER:-mob}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     ports:
       - "5432:5432"
     volumes:
@@ -34,9 +34,9 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: mob_train
-      DB_USERNAME: mob
-      DB_PASSWORD: mob_secret
+      DB_DATABASE: ${POSTGRES_DB:-mob_train}
+      DB_USERNAME: ${POSTGRES_USER:-mob}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     depends_on:
       postgres:
         condition: service_healthy
