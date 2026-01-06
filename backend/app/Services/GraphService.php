@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Contracts\DistanceRepositoryInterface;
+use App\Contracts\GraphServiceInterface;
 use SplPriorityQueue;
 
-class GraphService
+class GraphService implements GraphServiceInterface
 {
     /**
      * @var array<string, array<string, float>>

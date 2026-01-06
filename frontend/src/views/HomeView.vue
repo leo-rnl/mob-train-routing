@@ -4,44 +4,21 @@
   import RouteCard from '@/components/RouteCard.vue'
   import EmptyState from '@/components/EmptyState.vue'
   import ErrorAlert from '@/components/ErrorAlert.vue'
-  import { routesApi } from '@/services/api'
   import { usePagination } from '@/composables/usePagination'
   import { useRouteHistory } from '@/composables/useRouteHistory'
-  import { getApiErrorMessage } from '@/utils/errorUtils'
+  import { useRouteListFetch } from '@/composables/useRouteListFetch'
   import type { Route } from '@/types/api'
 
   // Composables
   const pagination = usePagination({ perPage: 10 })
   const history = useRouteHistory()
+  const routeList = useRouteListFetch({ pagination, history })
 
   // Local state
-  const error = ref<string | null>(null)
   const prefillData = ref<{ from?: string; to?: string; code?: string } | null>(null)
 
-  async function fetchRoutes(page = 1, append = false) {
-    pagination.isLoading.value = true
-    error.value = null
-
-    try {
-      const { data } = await routesApi.list({ page, per_page: pagination.perPage })
-
-      if (append) {
-        history.appendRoutes(data.data)
-      } else {
-        history.setRoutes(data.data)
-      }
-
-      pagination.setMeta(data.meta)
-    } catch (e) {
-      error.value = getApiErrorMessage(e, 'Erreur lors du chargement des trajets')
-    } finally {
-      pagination.isLoading.value = false
-    }
-  }
-
   function handleRouteCalculated(routeData: Route) {
-    history.setLastCalculated(routeData)
-    pagination.incrementTotal()
+    routeList.handleRouteCalculated(routeData)
     prefillData.value = null
   }
 
@@ -54,13 +31,7 @@
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function loadMore() {
-    if (pagination.hasMore.value) {
-      fetchRoutes(pagination.nextPage(), true)
-    }
-  }
-
-  onMounted(() => fetchRoutes())
+  onMounted(() => routeList.fetch())
 </script>
 
 <template>
@@ -83,7 +54,7 @@
           >
         </h2>
 
-        <ErrorAlert v-model="error" class="mb-4" />
+        <ErrorAlert v-model="routeList.error.value" class="mb-4" />
 
         <!-- Last calculated route (highlighted) -->
         <RouteCard
@@ -117,7 +88,7 @@
             variant="outlined"
             color="primary"
             aria-label="Charger plus de trajets"
-            @click="loadMore"
+            @click="routeList.loadMore"
           >
             Charger plus
           </v-btn>

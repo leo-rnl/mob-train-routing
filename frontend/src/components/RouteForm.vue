@@ -1,10 +1,9 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { routesApi } from '@/services/api'
   import { useStationsStore } from '@/stores/stations'
   import { useAnalyticCode } from '@/composables/useAnalyticCode'
   import { useStationFilter } from '@/composables/useStationFilter'
-  import { getApiErrorMessage } from '@/utils/errorUtils'
+  import { useRouteCalculation } from '@/composables/useRouteCalculation'
   import ErrorAlert from '@/components/ErrorAlert.vue'
   import type { Route } from '@/types/api'
 
@@ -18,6 +17,7 @@
 
   const stationsStore = useStationsStore()
   const analyticCodeStorage = useAnalyticCode()
+  const routeCalculation = useRouteCalculation()
 
   // Form state
   const fromStation = ref<string | null>(null)
@@ -62,10 +62,6 @@
     { immediate: true }
   )
 
-  // Submit state
-  const isSubmitting = ref(false)
-  const error = ref<string | null>(null)
-
   // Form validation
   const isFormValid = computed(
     () => !!(fromStation.value && toStation.value && analyticCode.value.trim())
@@ -95,33 +91,26 @@
   async function handleSubmit() {
     if (!isFormValid.value || !fromStation.value || !toStation.value) return
 
-    isSubmitting.value = true
-    error.value = null
+    const code = analyticCode.value.trim()
 
-    try {
-      const code = analyticCode.value.trim()
+    const route = await routeCalculation.calculate({
+      fromStationId: fromStation.value,
+      toStationId: toStation.value,
+      analyticCode: code,
+    })
 
-      const { data } = await routesApi.create({
-        fromStationId: fromStation.value,
-        toStationId: toStation.value,
-        analyticCode: code,
-      })
-
+    if (route) {
       // Persist analytic code
       analyticCodeStorage.save(code)
 
       // Emit the calculated route
-      emit('route-calculated', data)
+      emit('route-calculated', route)
 
       // Reset form (keep analytic code)
       fromStation.value = null
       toStation.value = null
       fromSearch.value = ''
       toSearch.value = ''
-    } catch (e) {
-      error.value = getApiErrorMessage(e, 'Erreur lors du calcul du trajet')
-    } finally {
-      isSubmitting.value = false
     }
   }
 </script>
@@ -139,7 +128,7 @@
       {{ stationsStore.error }}
     </v-alert>
 
-    <ErrorAlert v-model="error" class="mb-4" />
+    <ErrorAlert v-model="routeCalculation.error.value" class="mb-4" />
 
     <v-form @submit.prevent="handleSubmit">
       <!-- Station inputs with timeline -->
@@ -216,8 +205,8 @@
         color="primary"
         block
         size="large"
-        :loading="isSubmitting"
-        :disabled="!isFormValid || isSubmitting"
+        :loading="routeCalculation.isSubmitting.value"
+        :disabled="!isFormValid || routeCalculation.isSubmitting.value"
       >
         Calculer le trajet
       </v-btn>

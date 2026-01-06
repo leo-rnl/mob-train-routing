@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\GraphServiceInterface;
 use App\Contracts\RouteRepositoryInterface;
 use App\Contracts\RouteServiceInterface;
 use App\Models\Route;
@@ -9,7 +10,7 @@ use App\Models\Route;
 class RouteService implements RouteServiceInterface
 {
     public function __construct(
-        private readonly GraphService $graphService,
+        private readonly GraphServiceInterface $graphService,
         private readonly RouteRepositoryInterface $routeRepository
     ) {
     }
